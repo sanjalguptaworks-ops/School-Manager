@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "School Management — Web"
+version = "1.0.0"
+id = "artifacts/school-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18985
+
+[services.development]
+run = "pnpm --filter @workspace/school-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/school-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/school-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18985"
+BASE_PATH = "/"

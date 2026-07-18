@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+:root {
+  --color-primary: 201 96% 32%;
+  --color-primary-light: 201 96% 40%;
+  --color-primary-dark: 201 96% 25%;
+  --color-bg-light: 210 40% 98%;
+  --color-bg-alt: 210 40% 96%;
+  --color-text: 222 47% 11%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: hsl(var(--color-bg-light));
+  color: hsl(var(--color-text));
+}

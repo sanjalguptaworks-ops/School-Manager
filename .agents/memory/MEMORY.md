@@ -1,0 +1,1 @@
+- [School Management MVP](school-mgmt-stack.md) — EduCore stack decisions, Clerk wiring, schema layout, and known TS quirks across all layers.

@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
 import { Check, Plus, Zap } from "lucide-react";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 async function generatePayments(feeStructureId: number) {
   const res = await fetch(`${BASE_URL}/api/fee-structures/${feeStructureId}/generate-payments`, {

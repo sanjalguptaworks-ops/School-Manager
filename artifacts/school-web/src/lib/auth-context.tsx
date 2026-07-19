@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export interface AuthUser {
   id: number;

@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 async function fetchStudentSummary(studentId: number) {
   const res = await fetch(`${BASE_URL}/api/students/${studentId}/summary`, { credentials: "include" });

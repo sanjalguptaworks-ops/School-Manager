@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

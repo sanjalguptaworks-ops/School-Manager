@@ -33,7 +33,7 @@ import { useAppAuth } from "@/lib/auth-context";
 import { Plus, Copy, Check, ShieldCheck, Link2 } from "lucide-react";
 import { format } from "date-fns";
 
-const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 const ROLE_COLORS: Record<string, string> = {
   admin: "bg-purple-100 text-purple-800 border-purple-200",

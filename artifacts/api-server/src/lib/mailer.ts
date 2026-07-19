@@ -1,32 +1,33 @@
-import nodemailer from "nodemailer";
-
-let transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
-
-function getTransporter() {
-  if (transporter) return transporter;
-  const host = process.env["SMTP_HOST"];
-  const port = process.env["SMTP_PORT"];
-  const user = process.env["SMTP_USER"];
-  const pass = process.env["SMTP_PASS"];
-  if (!host || !port || !user || !pass) {
-    throw new Error("SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS environment variables are required to send email.");
-  }
-  transporter = nodemailer.createTransport({
-    host,
-    port: Number(port),
-    secure: Number(port) === 465,
-    auth: { user, pass },
-  });
-  return transporter;
-}
-
+/**
+ * Sends email via Resend's HTTPS API (not SMTP).
+ * Render's free tier blocks outbound SMTP ports, so we use a plain
+ * HTTPS request instead — this always works regardless of hosting.
+ */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
-  const from = process.env["MAIL_FROM"] || process.env["SMTP_USER"];
-  await getTransporter().sendMail({
-    from,
-    to,
-    subject: "Reset your EduCore password",
-    text: `Click the link below to reset your password. This link expires in 1 hour.\n\n${resetUrl}\n\nIf you didn't request this, you can ignore this email.`,
-    html: `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY environment variable is required to send email.");
+  }
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `EduCore <${from}>`,
+      to: [to],
+      subject: "Reset your EduCore password",
+      text: `Click the link below to reset your password. This link expires in 1 hour.\n\n${resetUrl}\n\nIf you didn't request this, you can ignore this email.`,
+      html: `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+    }),
   });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend API error (${res.status}): ${body}`);
+  }
 }

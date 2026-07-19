@@ -43,7 +43,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
 router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
   try {
     const authUserId = (req as any).authUserId;
-    const { name, phone, email } = req.body;
+    const { name, phone, email, avatarUrl } = req.body;
 
     const [me] = await db.select().from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
     if (!me) {
@@ -54,6 +54,7 @@ router.patch("/users/me", requireAuth, async (req, res): Promise<void> => {
     const updates: Record<string, any> = {};
     if (typeof name === "string" && name.trim()) updates.name = name.trim();
     if (typeof phone === "string") updates.phone = phone.trim() || null;
+    if (typeof avatarUrl === "string") updates.avatarUrl = avatarUrl.trim() || null;
 
     let emailChangePending = false;
 

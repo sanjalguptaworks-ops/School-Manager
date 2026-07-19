@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAppAuth } from "@/lib/auth-context";
 import { useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Phone, Clock, LogOut, ShieldCheck, Pencil, X } from "lucide-react";
+import { uploadProfilePicture } from "@/lib/upload-image";
+import { Mail, Phone, Clock, LogOut, ShieldCheck, Pencil, X, Camera } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -16,9 +17,11 @@ export default function ProfilePage() {
   const { user, logout, refresh } = useAppAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
@@ -35,6 +38,43 @@ export default function ProfilePage() {
 
   const cancelEditing = () => {
     setEditing(false);
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please choose an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image is too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const avatarUrl = await uploadProfilePicture(file);
+      const res = await fetch(`${BASE_URL}/api/users/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ avatarUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({ title: data.error || "Could not save photo", variant: "destructive" });
+        return;
+      }
+      await refresh();
+      toast({ title: "Profile photo updated" });
+    } catch (err: any) {
+      toast({ title: err?.message || "Could not upload photo", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -85,10 +125,34 @@ export default function ProfilePage() {
       <Card className="shadow-sm border-border/50 overflow-hidden">
         <div className="h-32 bg-primary/5 w-full relative">
           <div className="absolute -bottom-10 left-6">
-            <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center p-1 shadow-sm">
-              <div className="w-full h-full rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold">
-                {user.name.charAt(0).toUpperCase()}
+            <div className="w-20 h-20 rounded-full bg-background flex items-center justify-center p-1 shadow-sm relative group">
+              <div className="w-full h-full rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold overflow-hidden">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
               </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute inset-0 m-1 rounded-full bg-black/40 text-white flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+                title="Change photo"
+              >
+                {uploadingPhoto ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
             </div>
           </div>
         </div>

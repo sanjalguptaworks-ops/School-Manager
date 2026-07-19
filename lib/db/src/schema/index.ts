@@ -1,5 +1,6 @@
 export * from "./users";
 export * from "./password-resets";
+export * from "./email-changes";
 export * from "./classes";
 export * from "./students";
 export * from "./teachers";

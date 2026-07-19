@@ -26,3 +26,13 @@ export function verifyResetToken(token: string): { userId: number } {
   if (decoded.purpose !== "reset") throw new Error("Invalid token purpose");
   return { userId: decoded.userId };
 }
+
+export function signEmailChangeToken(userId: number, newEmail: string): string {
+  return jwt.sign({ userId, newEmail, purpose: "email-change" }, SECRET, { expiresIn: "1h" });
+}
+
+export function verifyEmailChangeToken(token: string): { userId: number; newEmail: string } {
+  const decoded = jwt.verify(token, SECRET) as { userId: number; newEmail: string; purpose: string };
+  if (decoded.purpose !== "email-change") throw new Error("Invalid token purpose");
+  return { userId: decoded.userId, newEmail: decoded.newEmail };
+}

@@ -8,6 +8,7 @@ import Landing from '@/pages/landing';
 import LoginPage from '@/pages/login';
 import ForgotPasswordPage from '@/pages/forgot-password';
 import ResetPasswordPage from '@/pages/reset-password';
+import ConfirmEmailChangePage from '@/pages/confirm-email-change';
 import Dashboard from '@/pages/dashboard';
 import StudentsList from '@/pages/students/list';
 import StudentDetail from '@/pages/students/detail';
@@ -72,6 +73,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
+      <Route path="/confirm-email-change" component={ConfirmEmailChangePage} />
 
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/students"><ProtectedRoute component={StudentsList} /></Route>

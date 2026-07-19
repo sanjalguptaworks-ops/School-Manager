@@ -6,6 +6,7 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
   role: "admin" | "teacher" | "student" | "parent";
   studentId?: number | null;
   teacherId?: number | null;

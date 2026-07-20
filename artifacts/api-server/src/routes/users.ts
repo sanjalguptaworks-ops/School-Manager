@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, usersTable, studentsTable, teachersTable, emailChangesTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword } from "../lib/password";
 import { signEmailChangeToken, verifyEmailChangeToken } from "../lib/jwt";
 import { sendEmailChangeConfirmation } from "../lib/mailer";
@@ -190,34 +190,39 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
   }
 });
 
-// PATCH /users/:id
+// PATCH /users/:id — admin only (e.g. changing someone else's role or
+// fixing their name). Regular users should use PATCH /users/me instead.
 router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
-  try {
-    const id = parseInt(req.params["id"] as string);
-    const { name, role } = req.body;
-    const updates: Record<string, any> = {};
-    if (name) updates.name = name;
-    if (role) updates.role = role;
-    const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
-    if (!updated) { res.status(404).json({ error: "Not found" }); return; }
-    const { passwordHash, ...safeUser } = updated;
-    res.json(safeUser);
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params["id"] as string);
+      const { name, role } = req.body;
+      const updates: Record<string, any> = {};
+      if (name) updates.name = name;
+      if (role) updates.role = role;
+      const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
+      if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+      const { passwordHash, ...safeUser } = updated;
+      res.json(safeUser);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
-// DELETE /users/:id
+// DELETE /users/:id — admin only.
 router.delete("/users/:id", requireAuth, async (req, res): Promise<void> => {
-  try {
-    const id = parseInt(req.params["id"] as string);
-    await db.delete(usersTable).where(eq(usersTable.id, id));
-    res.status(204).send();
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params["id"] as string);
+      await db.delete(usersTable).where(eq(usersTable.id, id));
+      res.status(204).send();
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
 export default router;

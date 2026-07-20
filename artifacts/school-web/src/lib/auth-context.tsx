@@ -8,7 +8,8 @@ export interface AuthUser {
   email: string;
   phone?: string | null;
   avatarUrl?: string | null;
-  role: "admin" | "teacher" | "student" | "parent";
+  role: "creator" | "admin" | "teacher" | "student" | "parent";
+  schoolId?: number | null;
   studentId?: number | null;
   teacherId?: number | null;
   [key: string]: any;
@@ -19,7 +20,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -27,7 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => ({ ok: false }),
   logout: async () => {},
-  refresh: async () => {},
+  refresh: async () => null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -38,12 +39,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`${BASE_URL}/api/users/me`, { credentials: "include" });
       if (res.ok) {
-        setUser(await res.json());
+        const me = await res.json();
+        setUser(me);
+        return me;
       } else {
         setUser(null);
+        return null;
       }
     } catch {
       setUser(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +71,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const data = await res.json().catch(() => ({}));
           return { ok: false, error: data.error || "Invalid email or password" };
         }
-        await refresh();
+        const me = await refresh();
+        if (!me) {
+          return {
+            ok: false,
+            error:
+              "Your password was correct, but your browser blocked staying signed in (this can happen with strict privacy/cookie settings). Try a different browser, or turn off enhanced/strict tracking protection for this site.",
+          };
+        }
         return { ok: true };
       } catch {
         return { ok: false, error: "Could not reach the server. Try again." };

@@ -6,12 +6,13 @@
 import { Router } from "express";
 import { db, usersTable, studentsTable, teachersTable, parentStudentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 
 const router = Router();
 
 router.post("/invite", requireAuth, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
   try {
     const {
       name,
@@ -45,6 +46,13 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
+    const authUserId = (req as any).authUserId;
+    const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+    if (!me?.schoolId) {
+      res.status(403).json({ error: "Your account isn't linked to a school" });
+      return;
+    }
+
     const normalizedEmail = String(email).toLowerCase();
     const existing = await db
       .select({ id: usersTable.id })
@@ -62,7 +70,7 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
 
     const [dbUser] = await db
       .insert(usersTable)
-      .values({ name, email: normalizedEmail, role, passwordHash })
+      .values({ name, email: normalizedEmail, role, passwordHash, schoolId: me.schoolId })
       .returning();
 
     let teacherId: number | null = null;
@@ -100,6 +108,7 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
+  });
 });
 
 export default router;

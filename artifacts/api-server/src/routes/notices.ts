@@ -51,10 +51,14 @@ router.post("/notices", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "title, body, targetRole required" });
     }
     const createdBy = (req as any).authUserId || null;
+    const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, createdBy)).limit(1);
+    if (!me?.schoolId) {
+      return res.status(403).json({ error: "Your account isn't linked to a school" });
+    }
 
     const [notice] = await db
       .insert(noticesTable)
-      .values({ title, body, targetRole, classId: classId || null, createdBy })
+      .values({ title, body, targetRole, classId: classId || null, schoolId: me.schoolId, createdBy })
       .returning();
 
     // Fire-and-forget: don't make the person wait for emails to send.

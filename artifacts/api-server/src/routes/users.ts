@@ -155,14 +155,21 @@ router.post("/users/confirm-email-change", async (req, res): Promise<void> => {
   }
 });
 
-// GET /users — admin only (lists everyone's name/email/role)
+// GET /users — admin only, scoped to their own school
 router.get("/users", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
+      const authUserId = (req as any).authUserId;
+      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      if (!me?.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school" });
+        return;
+      }
       const { role } = req.query as { role?: string };
-      const rows = role
-        ? await db.select().from(usersTable).where(eq(usersTable.role, role as any))
-        : await db.select().from(usersTable);
+      const conditions = role
+        ? and(eq(usersTable.schoolId, me.schoolId), eq(usersTable.role, role as any))
+        : eq(usersTable.schoolId, me.schoolId);
+      const rows = await db.select().from(usersTable).where(conditions);
       res.json(rows.map(({ passwordHash, ...u }) => u));
     } catch (err) {
       req.log.error(err);
@@ -175,6 +182,12 @@ router.get("/users", requireAuth, async (req, res): Promise<void> => {
 router.post("/users", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
+      const authUserId = (req as any).authUserId;
+      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      if (!me?.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school" });
+        return;
+      }
       const { name, email, role, password } = req.body;
       if (!name || !email || !role || !password) {
         res.status(400).json({ error: "name, email, role, password required" });
@@ -183,7 +196,7 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
       const passwordHash = await hashPassword(password);
       const [user] = await db
         .insert(usersTable)
-        .values({ name, email: String(email).toLowerCase(), role, passwordHash })
+        .values({ name, email: String(email).toLowerCase(), role, passwordHash, schoolId: me.schoolId })
         .returning();
       const { passwordHash: _omit, ...safeUser } = user;
       res.status(201).json(safeUser);

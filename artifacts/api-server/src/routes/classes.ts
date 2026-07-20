@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, classesTable, studentsTable } from "@workspace/db";
+import { db, classesTable, studentsTable, usersTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 
@@ -32,7 +32,12 @@ router.post("/classes", requireAuth, async (req, res) => {
     if (!name || !section) {
       return res.status(400).json({ error: "name and section required" });
     }
-    const [cls] = await db.insert(classesTable).values({ name, section }).returning();
+    const authUserId = (req as any).authUserId;
+    const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+    if (!me?.schoolId) {
+      return res.status(403).json({ error: "Your account isn't linked to a school" });
+    }
+    const [cls] = await db.insert(classesTable).values({ name, section, schoolId: me.schoolId }).returning();
     return res.status(201).json({ ...cls, studentCount: 0 });
   } catch (err) {
     req.log.error(err);

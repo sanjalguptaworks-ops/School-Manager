@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, passwordResetsTable } from "@workspace/db";
+import { db, usersTable, passwordResetsTable, schoolsTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { hashPassword, comparePassword } from "../lib/password";
 import { signSession, signResetToken, verifyResetToken } from "../lib/jwt";
@@ -37,9 +37,68 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
+
+    // Creator accounts aren't tied to a school. Everyone else's school must
+    // be approved before they can sign in.
+    if (user.role !== "creator") {
+      if (!user.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school. Contact support." });
+        return;
+      }
+      const [school] = await db.select().from(schoolsTable).where(eq(schoolsTable.id, user.schoolId)).limit(1);
+      if (!school || school.status === "pending") {
+        res.status(403).json({ error: "Your school's signup is still awaiting approval. Please check back soon." });
+        return;
+      }
+      if (school.status === "rejected") {
+        res.status(403).json({ error: "Your school's signup was not approved. Contact support for details." });
+        return;
+      }
+    }
+
     const token = signSession({ userId: user.id });
     res.cookie("session", token, cookieOptions);
     res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /auth/signup — public. Registers a new school (pending approval)
+// and its first admin account. Login is blocked until a creator approves it.
+router.post("/auth/signup", async (req, res): Promise<void> => {
+  try {
+    const { schoolName, name, email, password } = req.body;
+    if (!schoolName || !name || !email || !password) {
+      res.status(400).json({ error: "schoolName, name, email, and password are required" });
+      return;
+    }
+    if (String(password).length < 8) {
+      res.status(400).json({ error: "Password must be at least 8 characters" });
+      return;
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await db.select().from(usersTable).where(eq(usersTable.email, normalizedEmail)).limit(1);
+    if (existing[0]) {
+      res.status(409).json({ error: "An account with that email already exists" });
+      return;
+    }
+
+    const [school] = await db.insert(schoolsTable).values({ name: schoolName, status: "pending" }).returning();
+    const passwordHash = await hashPassword(password);
+    const [user] = await db
+      .insert(usersTable)
+      .values({ name, email: normalizedEmail, passwordHash, role: "admin", schoolId: school.id })
+      .returning();
+
+    const { passwordHash: _omit, ...safeUser } = user;
+    res.status(201).json({
+      school,
+      user: safeUser,
+      message: "Your school has been submitted and is awaiting approval. You'll be able to log in once it's approved.",
+    });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Internal server error" });

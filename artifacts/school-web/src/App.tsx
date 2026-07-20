@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/landing';
 import LoginPage from '@/pages/login';
+import SignupPage from '@/pages/signup';
 import ForgotPasswordPage from '@/pages/forgot-password';
 import ResetPasswordPage from '@/pages/reset-password';
 import ConfirmEmailChangePage from '@/pages/confirm-email-change';
@@ -23,6 +24,7 @@ import NoticesPage from '@/pages/notices/index';
 import FeesPage from '@/pages/fees/index';
 import ProfilePage from '@/pages/profile/index';
 import UsersPage from '@/pages/users/index';
+import CreatorSchoolsPage from '@/pages/creator/schools';
 
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -49,6 +51,7 @@ function LoadingScreen() {
 function HomeRedirect() {
   const { user, isLoading } = useAppAuth();
   if (isLoading) return <LoadingScreen />;
+  if (user?.role === "creator") return <Redirect to="/creator/schools" />;
   if (user) return <Redirect to="/dashboard" />;
   return <Landing />;
 }
@@ -58,6 +61,21 @@ function ProtectedRoute({ component: Component }: { component: any }) {
 
   if (isLoading) return <LoadingScreen />;
   if (!user) return <Redirect to="/login" />;
+  if (user.role === "creator") return <Redirect to="/creator/schools" />;
+
+  return (
+    <AppLayout>
+      <Component />
+    </AppLayout>
+  );
+}
+
+function CreatorRoute({ component: Component }: { component: any }) {
+  const { user, isLoading } = useAppAuth();
+
+  if (isLoading) return <LoadingScreen />;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role !== "creator") return <Redirect to="/dashboard" />;
 
   return (
     <AppLayout>
@@ -71,6 +89,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/confirm-email-change" component={ConfirmEmailChangePage} />
@@ -89,6 +108,7 @@ function Router() {
       <Route path="/fees"><ProtectedRoute component={FeesPage} /></Route>
       <Route path="/profile"><ProtectedRoute component={ProfilePage} /></Route>
       <Route path="/users"><ProtectedRoute component={UsersPage} /></Route>
+      <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />
     </Switch>

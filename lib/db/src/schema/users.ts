@@ -1,6 +1,7 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { schoolsTable } from "./schools";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -9,9 +10,11 @@ export const usersTable = pgTable("users", {
   phone: text("phone"),
   avatarUrl: text("avatar_url"),
   passwordHash: text("password_hash").notNull(),
-  role: text("role", { enum: ["admin", "teacher", "student", "parent"] })
+  role: text("role", { enum: ["creator", "admin", "teacher", "student", "parent"] })
     .notNull()
     .default("student"),
+  // Null only for "creator" accounts, which aren't tied to any one school.
+  schoolId: integer("school_id").references(() => schoolsTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

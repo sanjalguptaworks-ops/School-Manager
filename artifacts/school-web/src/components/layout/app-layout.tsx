@@ -20,6 +20,9 @@ import { NavItem } from "./nav-item";
 import { Button } from "../ui/button";
 
 const navConfig = {
+  creator: [
+    { href: "/creator/schools", icon: ShieldCheck, label: "Schools" },
+  ],
   admin: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/users", icon: ShieldCheck, label: "Users" },

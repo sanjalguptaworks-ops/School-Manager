@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 import { classesTable } from "./classes";
+import { schoolsTable } from "./schools";
 
 export const noticesTable = pgTable("notices", {
   id: serial("id").primaryKey(),
@@ -16,6 +17,9 @@ export const noticesTable = pgTable("notices", {
   classId: integer("class_id").references(() => classesTable.id, {
     onDelete: "set null",
   }),
+  schoolId: integer("school_id")
+    .notNull()
+    .references(() => schoolsTable.id, { onDelete: "cascade" }),
   createdBy: integer("created_by").references(() => usersTable.id, {
     onDelete: "set null",
   }),

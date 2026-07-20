@@ -13,6 +13,7 @@ import noticesRouter from "./notices";
 import feesRouter from "./fees";
 import dashboardRouter from "./dashboard";
 import parentsRouter from "./parents";
+import schoolsRouter from "./schools";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(noticesRouter);
 router.use(feesRouter);
 router.use(dashboardRouter);
 router.use(parentsRouter);
+router.use(schoolsRouter);
 
 export default router;

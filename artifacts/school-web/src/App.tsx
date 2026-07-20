@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Switch, Route, Redirect, Router as WouterRouter } from 'wouter';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 import NotFound from '@/pages/not-found';
 import Landing from '@/pages/landing';
@@ -48,18 +50,47 @@ function LoadingScreen() {
   );
 }
 
+function ConnectionErrorScreen({ onRetry }: { onRetry: () => Promise<unknown> }) {
+  const [retrying, setRetrying] = useState(false);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-sm text-center space-y-4">
+        <p className="text-lg font-semibold">Couldn't reach the server</p>
+        <p className="text-sm text-muted-foreground">
+          This can happen right after the server has been idle and is waking back up. Your session is still saved — just try again.
+        </p>
+        <Button onClick={handleRetry} disabled={retrying}>
+          {retrying ? "Retrying…" : "Try again"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function HomeRedirect() {
-  const { user, isLoading } = useAppAuth();
+  const { user, isLoading, authError, refresh } = useAppAuth();
   if (isLoading) return <LoadingScreen />;
+  if (authError) return <ConnectionErrorScreen onRetry={refresh} />;
   if (user?.role === "creator") return <Redirect to="/creator/schools" />;
   if (user) return <Redirect to="/dashboard" />;
   return <Landing />;
 }
 
 function ProtectedRoute({ component: Component }: { component: any }) {
-  const { user, isLoading } = useAppAuth();
+  const { user, isLoading, authError, refresh } = useAppAuth();
 
   if (isLoading) return <LoadingScreen />;
+  if (authError) return <ConnectionErrorScreen onRetry={refresh} />;
   if (!user) return <Redirect to="/login" />;
   if (user.role === "creator") return <Redirect to="/creator/schools" />;
 
@@ -71,9 +102,10 @@ function ProtectedRoute({ component: Component }: { component: any }) {
 }
 
 function CreatorRoute({ component: Component }: { component: any }) {
-  const { user, isLoading } = useAppAuth();
+  const { user, isLoading, authError, refresh } = useAppAuth();
 
   if (isLoading) return <LoadingScreen />;
+  if (authError) return <ConnectionErrorScreen onRetry={refresh} />;
   if (!user) return <Redirect to="/login" />;
   if (user.role !== "creator") return <Redirect to="/dashboard" />;
 

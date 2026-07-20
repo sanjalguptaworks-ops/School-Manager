@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { db, teachersTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { eq, and } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 
 const router = Router();
 
-async function getTeacherWithUser(id: number) {
+async function getTeacherWithUser(id: number, schoolId: number) {
   const rows = await db
     .select({
       id: teachersTable.id,
@@ -21,15 +21,16 @@ async function getTeacherWithUser(id: number) {
       },
     })
     .from(teachersTable)
-    .leftJoin(usersTable, eq(teachersTable.userId, usersTable.id))
-    .where(eq(teachersTable.id, id))
+    .innerJoin(usersTable, eq(teachersTable.userId, usersTable.id))
+    .where(and(eq(teachersTable.id, id), eq(usersTable.schoolId, schoolId)))
     .limit(1);
   return rows[0] || null;
 }
 
 // GET /teachers
-router.get("/teachers", requireAuth, async (req, res) => {
+router.get("/teachers", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const rows = await db
       .select({
         id: teachersTable.id,
@@ -44,7 +45,8 @@ router.get("/teachers", requireAuth, async (req, res) => {
         },
       })
       .from(teachersTable)
-      .leftJoin(usersTable, eq(teachersTable.userId, usersTable.id));
+      .innerJoin(usersTable, eq(teachersTable.userId, usersTable.id))
+      .where(eq(usersTable.schoolId, schoolId));
     return res.json(rows);
   } catch (err) {
     req.log.error(err);
@@ -53,8 +55,9 @@ router.get("/teachers", requireAuth, async (req, res) => {
 });
 
 // POST /teachers
-router.post("/teachers", requireAuth, async (req, res) => {
+router.post("/teachers", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { name, email, subjects = [] } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: "name and email required" });
@@ -62,13 +65,13 @@ router.post("/teachers", requireAuth, async (req, res) => {
     const passwordHash = await hashPassword(generateTempPassword());
     const [user] = await db
       .insert(usersTable)
-      .values({ name, email: String(email).toLowerCase(), role: "teacher", passwordHash })
+      .values({ name, email: String(email).toLowerCase(), role: "teacher", passwordHash, schoolId })
       .returning();
     const [teacher] = await db
       .insert(teachersTable)
       .values({ userId: user.id, subjects })
       .returning();
-    const full = await getTeacherWithUser(teacher.id);
+    const full = await getTeacherWithUser(teacher.id, schoolId);
     return res.status(201).json(full);
   } catch (err) {
     req.log.error(err);
@@ -77,10 +80,11 @@ router.post("/teachers", requireAuth, async (req, res) => {
 });
 
 // GET /teachers/:id
-router.get("/teachers/:id", requireAuth, async (req, res) => {
+router.get("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
-    const teacher = await getTeacherWithUser(id);
+    const schoolId = (req as any).schoolId;
+    const teacher = await getTeacherWithUser(id, schoolId);
     if (!teacher) return res.status(404).json({ error: "Not found" });
     return res.json(teacher);
   } catch (err) {
@@ -90,14 +94,17 @@ router.get("/teachers/:id", requireAuth, async (req, res) => {
 });
 
 // PATCH /teachers/:id
-router.patch("/teachers/:id", requireAuth, async (req, res) => {
+router.patch("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
+    const schoolId = (req as any).schoolId;
+    const existing = await getTeacherWithUser(id, schoolId);
+    if (!existing) return res.status(404).json({ error: "Not found" });
     const { subjects } = req.body;
     if (subjects !== undefined) {
       await db.update(teachersTable).set({ subjects }).where(eq(teachersTable.id, id));
     }
-    const teacher = await getTeacherWithUser(id);
+    const teacher = await getTeacherWithUser(id, schoolId);
     if (!teacher) return res.status(404).json({ error: "Not found" });
     return res.json(teacher);
   } catch (err) {
@@ -107,9 +114,12 @@ router.patch("/teachers/:id", requireAuth, async (req, res) => {
 });
 
 // DELETE /teachers/:id
-router.delete("/teachers/:id", requireAuth, async (req, res) => {
+router.delete("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
+    const schoolId = (req as any).schoolId;
+    const existing = await getTeacherWithUser(id, schoolId);
+    if (!existing) return res.status(404).json({ error: "Not found" });
     await db.delete(teachersTable).where(eq(teachersTable.id, id));
     return res.status(204).send();
   } catch (err) {

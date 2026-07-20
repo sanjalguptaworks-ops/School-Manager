@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { db, marksTable, studentsTable, examsTable, usersTable, classesTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
 // GET /marks
-router.get("/marks", requireAuth, async (req, res) => {
+router.get("/marks", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { examId, studentId } = req.query as Record<string, string>;
-    const filters: any[] = [];
+    const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (examId) filters.push(eq(marksTable.examId, parseInt(examId)));
     if (studentId) filters.push(eq(marksTable.studentId, parseInt(studentId)));
 
@@ -22,9 +23,11 @@ router.get("/marks", requireAuth, async (req, res) => {
         student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}))`,
       })
       .from(marksTable)
+      .innerJoin(examsTable, eq(marksTable.examId, examsTable.id))
+      .innerJoin(classesTable, eq(examsTable.classId, classesTable.id))
       .leftJoin(studentsTable, eq(marksTable.studentId, studentsTable.id))
       .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
-      .where(filters.length ? and(...filters) : undefined);
+      .where(and(...filters));
 
     return res.json(rows);
   } catch (err) {
@@ -34,13 +37,34 @@ router.get("/marks", requireAuth, async (req, res) => {
 });
 
 // POST /marks/bulk
-router.post("/marks/bulk", requireAuth, async (req, res) => {
+router.post("/marks/bulk", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { examId, records } = req.body;
     if (!examId || !Array.isArray(records)) {
       return res.status(400).json({ error: "examId and records required" });
     }
-    const values = records.map((r: any) => ({
+
+    const [exam] = await db
+      .select({ id: examsTable.id, classId: examsTable.classId })
+      .from(examsTable)
+      .innerJoin(classesTable, eq(examsTable.classId, classesTable.id))
+      .where(and(eq(examsTable.id, examId), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!exam) return res.status(400).json({ error: "Invalid examId" });
+
+    const studentIds = records.map((r: any) => r.studentId);
+    const validStudents = await db
+      .select({ id: studentsTable.id })
+      .from(studentsTable)
+      .where(and(eq(studentsTable.classId, exam.classId), inArray(studentsTable.id, studentIds)));
+    const validIds = new Set(validStudents.map((s) => s.id));
+    const filteredRecords = records.filter((r: any) => validIds.has(r.studentId));
+    if (filteredRecords.length === 0) {
+      return res.json([]);
+    }
+
+    const values = filteredRecords.map((r: any) => ({
       examId,
       studentId: r.studentId,
       marksObtained: String(r.marksObtained),
@@ -63,11 +87,12 @@ router.post("/marks/bulk", requireAuth, async (req, res) => {
 });
 
 // GET /marks/report/:studentId
-router.get("/marks/report/:studentId", requireAuth, async (req, res) => {
+router.get("/marks/report/:studentId", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const studentId = parseInt(req.params['studentId'] as string);
 
-    // Get student info
+    // Get student info, scoped to this school
     const studentRows = await db
       .select({
         id: studentsTable.id,
@@ -81,7 +106,8 @@ router.get("/marks/report/:studentId", requireAuth, async (req, res) => {
       })
       .from(studentsTable)
       .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
-      .where(eq(studentsTable.id, studentId))
+      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+      .where(and(eq(studentsTable.id, studentId), eq(classesTable.schoolId, schoolId)))
       .limit(1);
 
     if (!studentRows[0]) return res.status(404).json({ error: "Student not found" });

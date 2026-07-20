@@ -1,13 +1,14 @@
 import { Router } from "express";
-import { db, classesTable, studentsTable, usersTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { db, classesTable, studentsTable } from "@workspace/db";
+import { eq, and, sql } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
 // GET /classes
-router.get("/classes", requireAuth, async (req, res) => {
+router.get("/classes", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const rows = await db
       .select({
         id: classesTable.id,
@@ -17,6 +18,7 @@ router.get("/classes", requireAuth, async (req, res) => {
       })
       .from(classesTable)
       .leftJoin(studentsTable, eq(studentsTable.classId, classesTable.id))
+      .where(eq(classesTable.schoolId, schoolId))
       .groupBy(classesTable.id);
     return res.json(rows);
   } catch (err) {
@@ -26,18 +28,14 @@ router.get("/classes", requireAuth, async (req, res) => {
 });
 
 // POST /classes
-router.post("/classes", requireAuth, async (req, res) => {
+router.post("/classes", requireAuth, requireSchool, async (req, res) => {
   try {
     const { name, section } = req.body;
     if (!name || !section) {
       return res.status(400).json({ error: "name and section required" });
     }
-    const authUserId = (req as any).authUserId;
-    const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
-    if (!me?.schoolId) {
-      return res.status(403).json({ error: "Your account isn't linked to a school" });
-    }
-    const [cls] = await db.insert(classesTable).values({ name, section, schoolId: me.schoolId }).returning();
+    const schoolId = (req as any).schoolId;
+    const [cls] = await db.insert(classesTable).values({ name, section, schoolId }).returning();
     return res.status(201).json({ ...cls, studentCount: 0 });
   } catch (err) {
     req.log.error(err);
@@ -46,9 +44,10 @@ router.post("/classes", requireAuth, async (req, res) => {
 });
 
 // GET /classes/:id
-router.get("/classes/:id", requireAuth, async (req, res) => {
+router.get("/classes/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
+    const schoolId = (req as any).schoolId;
     const rows = await db
       .select({
         id: classesTable.id,
@@ -58,7 +57,7 @@ router.get("/classes/:id", requireAuth, async (req, res) => {
       })
       .from(classesTable)
       .leftJoin(studentsTable, eq(studentsTable.classId, classesTable.id))
-      .where(eq(classesTable.id, id))
+      .where(and(eq(classesTable.id, id), eq(classesTable.schoolId, schoolId)))
       .groupBy(classesTable.id);
     if (!rows[0]) return res.status(404).json({ error: "Not found" });
     return res.json(rows[0]);
@@ -69,9 +68,10 @@ router.get("/classes/:id", requireAuth, async (req, res) => {
 });
 
 // PATCH /classes/:id
-router.patch("/classes/:id", requireAuth, async (req, res) => {
+router.patch("/classes/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
+    const schoolId = (req as any).schoolId;
     const { name, section } = req.body;
     const updates: Record<string, any> = {};
     if (name) updates.name = name;
@@ -79,7 +79,7 @@ router.patch("/classes/:id", requireAuth, async (req, res) => {
     const [updated] = await db
       .update(classesTable)
       .set(updates)
-      .where(eq(classesTable.id, id))
+      .where(and(eq(classesTable.id, id), eq(classesTable.schoolId, schoolId)))
       .returning();
     if (!updated) return res.status(404).json({ error: "Not found" });
     return res.json({ ...updated, studentCount: 0 });
@@ -90,10 +90,15 @@ router.patch("/classes/:id", requireAuth, async (req, res) => {
 });
 
 // DELETE /classes/:id
-router.delete("/classes/:id", requireAuth, async (req, res) => {
+router.delete("/classes/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
-    await db.delete(classesTable).where(eq(classesTable.id, id));
+    const schoolId = (req as any).schoolId;
+    const [deleted] = await db
+      .delete(classesTable)
+      .where(and(eq(classesTable.id, id), eq(classesTable.schoolId, schoolId)))
+      .returning();
+    if (!deleted) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();
   } catch (err) {
     req.log.error(err);

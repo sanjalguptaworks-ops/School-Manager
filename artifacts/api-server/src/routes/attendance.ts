@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, attendanceTable, studentsTable, usersTable, classesTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
@@ -26,16 +26,18 @@ async function buildAttendanceQuery(filters: any[] = []) {
       },
     })
     .from(attendanceTable)
+    .innerJoin(classesTable, eq(attendanceTable.classId, classesTable.id))
     .leftJoin(studentsTable, eq(attendanceTable.studentId, studentsTable.id))
     .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
     .where(filters.length ? and(...filters) : undefined);
 }
 
 // GET /attendance
-router.get("/attendance", requireAuth, async (req, res) => {
+router.get("/attendance", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { classId, studentId, date, month } = req.query as Record<string, string>;
-    const filters: any[] = [];
+    const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (classId) filters.push(eq(attendanceTable.classId, parseInt(classId)));
     if (studentId) filters.push(eq(attendanceTable.studentId, parseInt(studentId)));
     if (date) filters.push(eq(attendanceTable.date, date));
@@ -50,16 +52,35 @@ router.get("/attendance", requireAuth, async (req, res) => {
 });
 
 // POST /attendance/bulk
-router.post("/attendance/bulk", requireAuth, async (req, res) => {
+router.post("/attendance/bulk", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { classId, date, records } = req.body;
     if (!classId || !date || !Array.isArray(records)) {
       return res.status(400).json({ error: "classId, date, records required" });
     }
     const markedBy = (req as any).authUserId || null;
 
+    const [cls] = await db
+      .select({ id: classesTable.id })
+      .from(classesTable)
+      .where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!cls) return res.status(400).json({ error: "Invalid classId" });
+
+    const studentIds = records.map((r: any) => r.studentId);
+    const validStudents = await db
+      .select({ id: studentsTable.id })
+      .from(studentsTable)
+      .where(and(eq(studentsTable.classId, classId), inArray(studentsTable.id, studentIds)));
+    const validIds = new Set(validStudents.map((s) => s.id));
+    const filteredRecords = records.filter((r: any) => validIds.has(r.studentId));
+    if (filteredRecords.length === 0) {
+      return res.json([]);
+    }
+
     // Upsert each record
-    const values = records.map((r: any) => ({
+    const values = filteredRecords.map((r: any) => ({
       studentId: r.studentId,
       classId,
       date,
@@ -84,11 +105,21 @@ router.post("/attendance/bulk", requireAuth, async (req, res) => {
 });
 
 // PATCH /attendance/:id
-router.patch("/attendance/:id", requireAuth, async (req, res) => {
+router.patch("/attendance/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
+    const schoolId = (req as any).schoolId;
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: "status required" });
+
+    const [existing] = await db
+      .select({ id: attendanceTable.id })
+      .from(attendanceTable)
+      .innerJoin(classesTable, eq(attendanceTable.classId, classesTable.id))
+      .where(and(eq(attendanceTable.id, id), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!existing) return res.status(404).json({ error: "Not found" });
+
     const [updated] = await db
       .update(attendanceTable)
       .set({ status })

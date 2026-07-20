@@ -1,16 +1,20 @@
 import { Router } from "express";
 import { db, feeStructuresTable, feePaymentsTable, classesTable, studentsTable, usersTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 import { notifyFeeDue } from "../lib/notify";
 
 const router = Router();
 
 // GET /fee-structures
-router.get("/fee-structures", requireAuth, async (req, res) => {
+router.get("/fee-structures", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { classId } = req.query as { classId?: string };
-    const base = db
+    const filters = [eq(classesTable.schoolId, schoolId)];
+    if (classId) filters.push(eq(feeStructuresTable.classId, parseInt(classId)));
+
+    const rows = await db
       .select({
         id: feeStructuresTable.id,
         classId: feeStructuresTable.classId,
@@ -24,11 +28,8 @@ router.get("/fee-structures", requireAuth, async (req, res) => {
         },
       })
       .from(feeStructuresTable)
-      .leftJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id));
-
-    const rows = classId
-      ? await base.where(eq(feeStructuresTable.classId, parseInt(classId)))
-      : await base;
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .where(and(...filters));
     return res.json(rows);
   } catch (err) {
     req.log.error(err);
@@ -37,12 +38,21 @@ router.get("/fee-structures", requireAuth, async (req, res) => {
 });
 
 // POST /fee-structures
-router.post("/fee-structures", requireAuth, async (req, res) => {
+router.post("/fee-structures", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { classId, amount, dueDate, term } = req.body;
     if (!classId || !amount || !dueDate || !term) {
       return res.status(400).json({ error: "All fields required" });
     }
+
+    const [cls] = await db
+      .select({ id: classesTable.id })
+      .from(classesTable)
+      .where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!cls) return res.status(400).json({ error: "Invalid classId" });
+
     const [fs] = await db
       .insert(feeStructuresTable)
       .values({ classId, amount: String(amount), dueDate, term })
@@ -55,11 +65,13 @@ router.post("/fee-structures", requireAuth, async (req, res) => {
 });
 
 // GET /fee-payments
-router.get("/fee-payments", requireAuth, async (req, res) => {
+router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { studentId, classId, status } = req.query as Record<string, string>;
-    const filters: any[] = [];
+    const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (studentId) filters.push(eq(feePaymentsTable.studentId, parseInt(studentId)));
+    if (classId) filters.push(eq(studentsTable.classId, parseInt(classId)));
     if (status) filters.push(eq(feePaymentsTable.status, status as any));
 
     const rows = await db
@@ -73,22 +85,13 @@ router.get("/fee-payments", requireAuth, async (req, res) => {
         feeStructure: sql<any>`json_build_object('id', ${feeStructuresTable.id}, 'amount', ${feeStructuresTable.amount}, 'term', ${feeStructuresTable.term}, 'dueDate', ${feeStructuresTable.dueDate})`,
       })
       .from(feePaymentsTable)
-      .leftJoin(studentsTable, eq(feePaymentsTable.studentId, studentsTable.id))
+      .innerJoin(studentsTable, eq(feePaymentsTable.studentId, studentsTable.id))
+      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
       .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
       .leftJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
-      .where(filters.length ? and(...filters) : undefined);
+      .where(and(...filters));
 
-    // Filter by classId via feeStructure
-    let result = rows;
-    if (classId) {
-      const classIdNum = parseInt(classId);
-      result = rows.filter((r: any) => {
-        // We need to check if the student is in the requested class
-        return true; // simplified
-      });
-    }
-
-    return res.json(result);
+    return res.json(rows);
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });
@@ -98,15 +101,23 @@ router.get("/fee-payments", requireAuth, async (req, res) => {
 // POST /fee-structures/:id/generate-payments
 // Creates pending fee_payment rows for every student in the fee structure's class.
 // Skips students who already have a record for this fee structure (idempotent).
-router.post("/fee-structures/:id/generate-payments", requireAuth, async (req, res): Promise<void> => {
+router.post("/fee-structures/:id/generate-payments", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {
+    const schoolId = (req as any).schoolId;
     const feeStructureId = parseInt(req.params["id"] as string);
 
-    // Load the fee structure
+    // Load the fee structure, scoped to this school
     const [fs] = await db
-      .select()
+      .select({
+        id: feeStructuresTable.id,
+        classId: feeStructuresTable.classId,
+        term: feeStructuresTable.term,
+        amount: feeStructuresTable.amount,
+        dueDate: feeStructuresTable.dueDate,
+      })
       .from(feeStructuresTable)
-      .where(eq(feeStructuresTable.id, feeStructureId))
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .where(and(eq(feeStructuresTable.id, feeStructureId), eq(classesTable.schoolId, schoolId)))
       .limit(1);
     if (!fs) {
       res.status(404).json({ error: "Fee structure not found" });
@@ -149,9 +160,20 @@ router.post("/fee-structures/:id/generate-payments", requireAuth, async (req, re
 });
 
 // POST /fee-payments/:id/mark-paid
-router.post("/fee-payments/:id/mark-paid", requireAuth, async (req, res) => {
+router.post("/fee-payments/:id/mark-paid", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const id = parseInt(req.params['id'] as string);
+
+    const [existing] = await db
+      .select({ id: feePaymentsTable.id })
+      .from(feePaymentsTable)
+      .innerJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .where(and(eq(feePaymentsTable.id, id), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!existing) return res.status(404).json({ error: "Not found" });
+
     const today = new Date().toISOString().split("T")[0];
     const [updated] = await db
       .update(feePaymentsTable)

@@ -1,14 +1,15 @@
 import { Router } from "express";
-import { db, noticesTable, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { db, noticesTable, usersTable, classesTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 import { notifyNewNotice } from "../lib/notify";
 
 const router = Router();
 
 // GET /notices
-router.get("/notices", requireAuth, async (req, res) => {
+router.get("/notices", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { classId, targetRole } = req.query as Record<string, string>;
 
     const rows = await db
@@ -30,6 +31,7 @@ router.get("/notices", requireAuth, async (req, res) => {
       })
       .from(noticesTable)
       .leftJoin(usersTable, eq(noticesTable.createdBy, usersTable.id))
+      .where(eq(noticesTable.schoolId, schoolId))
       .orderBy(noticesTable.createdAt);
 
     let filtered = rows;
@@ -44,21 +46,27 @@ router.get("/notices", requireAuth, async (req, res) => {
 });
 
 // POST /notices
-router.post("/notices", requireAuth, async (req, res) => {
+router.post("/notices", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { title, body, targetRole, classId } = req.body;
     if (!title || !body || !targetRole) {
       return res.status(400).json({ error: "title, body, targetRole required" });
     }
     const createdBy = (req as any).authUserId || null;
-    const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, createdBy)).limit(1);
-    if (!me?.schoolId) {
-      return res.status(403).json({ error: "Your account isn't linked to a school" });
+
+    if (classId) {
+      const [cls] = await db
+        .select({ id: classesTable.id })
+        .from(classesTable)
+        .where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, schoolId)))
+        .limit(1);
+      if (!cls) return res.status(400).json({ error: "Invalid classId" });
     }
 
     const [notice] = await db
       .insert(noticesTable)
-      .values({ title, body, targetRole, classId: classId || null, schoolId: me.schoolId, createdBy })
+      .values({ title, body, targetRole, classId: classId || null, schoolId, createdBy })
       .returning();
 
     // Fire-and-forget: don't make the person wait for emails to send.
@@ -72,10 +80,15 @@ router.post("/notices", requireAuth, async (req, res) => {
 });
 
 // DELETE /notices/:id
-router.delete("/notices/:id", requireAuth, async (req, res) => {
+router.delete("/notices/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
-    await db.delete(noticesTable).where(eq(noticesTable.id, id));
+    const schoolId = (req as any).schoolId;
+    const [deleted] = await db
+      .delete(noticesTable)
+      .where(and(eq(noticesTable.id, id), eq(noticesTable.schoolId, schoolId)))
+      .returning();
+    if (!deleted) return res.status(404).json({ error: "Not found" });
     return res.status(204).send();
   } catch (err) {
     req.log.error(err);

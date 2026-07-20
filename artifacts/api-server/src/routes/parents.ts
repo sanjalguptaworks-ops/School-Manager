@@ -12,14 +12,25 @@ import {
   feeStructuresTable,
 } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
 // GET /parents/:parentId/students  — list children linked to a parent
-router.get("/parents/:parentId/students", requireAuth, async (req, res): Promise<void> => {
+router.get("/parents/:parentId/students", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {
+    const schoolId = (req as any).schoolId;
     const parentId = parseInt(req.params["parentId"] as string);
+
+    const [parent] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.id, parentId), eq(usersTable.schoolId, schoolId)))
+      .limit(1);
+    if (!parent) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
 
     const rows = await db
       .select({
@@ -45,9 +56,9 @@ router.get("/parents/:parentId/students", requireAuth, async (req, res): Promise
       })
       .from(parentStudentsTable)
       .innerJoin(studentsTable, eq(parentStudentsTable.studentId, studentsTable.id))
+      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
       .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
-      .leftJoin(classesTable, eq(studentsTable.classId, classesTable.id))
-      .where(eq(parentStudentsTable.parentId, parentId));
+      .where(and(eq(parentStudentsTable.parentId, parentId), eq(classesTable.schoolId, schoolId)));
 
     res.json(rows);
   } catch (err) {
@@ -57,14 +68,37 @@ router.get("/parents/:parentId/students", requireAuth, async (req, res): Promise
 });
 
 // POST /parents/:parentId/link-student
-router.post("/parents/:parentId/link-student", requireAuth, async (req, res): Promise<void> => {
+router.post("/parents/:parentId/link-student", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {
+    const schoolId = (req as any).schoolId;
     const parentId = parseInt(req.params["parentId"] as string);
     const { studentId } = req.body;
     if (!studentId) {
       res.status(400).json({ error: "studentId required" });
       return;
     }
+
+    const [parent] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.id, parentId), eq(usersTable.schoolId, schoolId)))
+      .limit(1);
+    if (!parent) {
+      res.status(404).json({ error: "Parent not found" });
+      return;
+    }
+
+    const [student] = await db
+      .select({ id: studentsTable.id })
+      .from(studentsTable)
+      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+      .where(and(eq(studentsTable.id, studentId), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+    if (!student) {
+      res.status(404).json({ error: "Student not found" });
+      return;
+    }
+
     await db
       .insert(parentStudentsTable)
       .values({ parentId, studentId })
@@ -77,10 +111,22 @@ router.post("/parents/:parentId/link-student", requireAuth, async (req, res): Pr
 });
 
 // DELETE /parents/:parentId/link-student/:studentId
-router.delete("/parents/:parentId/link-student/:studentId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/parents/:parentId/link-student/:studentId", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {
+    const schoolId = (req as any).schoolId;
     const parentId = parseInt(req.params["parentId"] as string);
     const studentId = parseInt(req.params["studentId"] as string);
+
+    const [parent] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(and(eq(usersTable.id, parentId), eq(usersTable.schoolId, schoolId)))
+      .limit(1);
+    if (!parent) {
+      res.status(404).json({ error: "Parent not found" });
+      return;
+    }
+
     await db
       .delete(parentStudentsTable)
       .where(and(eq(parentStudentsTable.parentId, parentId), eq(parentStudentsTable.studentId, studentId)));
@@ -92,9 +138,23 @@ router.delete("/parents/:parentId/link-student/:studentId", requireAuth, async (
 });
 
 // GET /students/:studentId/summary  — attendance + marks + fee summary for a student
-router.get("/students/:studentId/summary", requireAuth, async (req, res): Promise<void> => {
+router.get("/students/:studentId/summary", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {
+    const schoolId = (req as any).schoolId;
     const studentId = parseInt(req.params["studentId"] as string);
+
+    // Upcoming exams (from student's class) — also validates the student belongs to this school
+    const [studentRow] = await db
+      .select({ classId: studentsTable.classId })
+      .from(studentsTable)
+      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+      .where(and(eq(studentsTable.id, studentId), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+
+    if (!studentRow) {
+      res.status(404).json({ error: "Student not found" });
+      return;
+    }
 
     // Attendance totals
     const [attendance] = await db
@@ -145,32 +205,23 @@ router.get("/students/:studentId/summary", requireAuth, async (req, res): Promis
     const pendingFees = feeRows.filter((f) => f.status === "pending").length;
     const paidFees = feeRows.filter((f) => f.status === "paid").length;
 
-    // Upcoming exams (from student's class)
-    const [studentRow] = await db
-      .select({ classId: studentsTable.classId })
-      .from(studentsTable)
-      .where(eq(studentsTable.id, studentId))
-      .limit(1);
-
-    const upcomingExams = studentRow
-      ? await db
-          .select({
-            id: examsTable.id,
-            name: examsTable.name,
-            subject: examsTable.subject,
-            date: examsTable.date,
-            maxMarks: examsTable.maxMarks,
-          })
-          .from(examsTable)
-          .where(
-            and(
-              eq(examsTable.classId, studentRow.classId),
-              sql`${examsTable.date} >= current_date`,
-            ),
-          )
-          .orderBy(examsTable.date)
-          .limit(5)
-      : [];
+    const upcomingExams = await db
+      .select({
+        id: examsTable.id,
+        name: examsTable.name,
+        subject: examsTable.subject,
+        date: examsTable.date,
+        maxMarks: examsTable.maxMarks,
+      })
+      .from(examsTable)
+      .where(
+        and(
+          eq(examsTable.classId, studentRow.classId),
+          sql`${examsTable.date} >= current_date`,
+        ),
+      )
+      .orderBy(examsTable.date)
+      .limit(5);
 
     res.json({
       attendance: { ...attendance, attendanceRate },

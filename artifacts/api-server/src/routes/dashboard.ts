@@ -10,30 +10,40 @@ import {
   noticesTable,
   usersTable,
 } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
-import { requireAuth } from "../middlewares/auth";
+import { eq, and, sql } from "drizzle-orm";
+import { requireAuth, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
 // GET /dashboard/summary
-router.get("/dashboard/summary", requireAuth, async (req, res) => {
+router.get("/dashboard/summary", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const today = new Date().toISOString().split("T")[0];
 
     const [[students], [teachers], [classes]] = await Promise.all([
-      db.select({ count: sql<number>`count(*)::int` }).from(studentsTable),
-      db.select({ count: sql<number>`count(*)::int` }).from(teachersTable),
-      db.select({ count: sql<number>`count(*)::int` }).from(classesTable),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(studentsTable)
+        .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+        .where(eq(classesTable.schoolId, schoolId)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(teachersTable)
+        .innerJoin(usersTable, eq(teachersTable.userId, usersTable.id))
+        .where(eq(usersTable.schoolId, schoolId)),
+      db.select({ count: sql<number>`count(*)::int` }).from(classesTable).where(eq(classesTable.schoolId, schoolId)),
     ]);
 
     // Attendance rate today
     const [attendanceToday] = await db
       .select({
         total: sql<number>`count(*)::int`,
-        present: sql<number>`count(*) filter (where status = 'present')::int`,
+        present: sql<number>`count(*) filter (where ${attendanceTable.status} = 'present')::int`,
       })
       .from(attendanceTable)
-      .where(eq(attendanceTable.date, today));
+      .innerJoin(classesTable, eq(attendanceTable.classId, classesTable.id))
+      .where(and(eq(attendanceTable.date, today), eq(classesTable.schoolId, schoolId)));
 
     const attendanceRateToday =
       attendanceToday.total > 0
@@ -48,7 +58,9 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
         pendingAmount: sql<number>`coalesce(sum(${feeStructuresTable.amount}::numeric) filter (where ${feePaymentsTable.status} = 'pending'), 0)::numeric`,
       })
       .from(feePaymentsTable)
-      .leftJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id));
+      .innerJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .where(eq(classesTable.schoolId, schoolId));
 
     return res.json({
       totalStudents: students.count,
@@ -66,8 +78,9 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
 });
 
 // GET /dashboard/attendance-summary
-router.get("/dashboard/attendance-summary", requireAuth, async (req, res) => {
+router.get("/dashboard/attendance-summary", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const { date } = req.query as { date?: string };
     if (!date) return res.status(400).json({ error: "date required" });
 
@@ -86,6 +99,7 @@ router.get("/dashboard/attendance-summary", requireAuth, async (req, res) => {
         attendanceTable,
         sql`${attendanceTable.classId} = ${classesTable.id} and ${attendanceTable.date} = ${date}`,
       )
+      .where(eq(classesTable.schoolId, schoolId))
       .groupBy(classesTable.id);
 
     return res.json(rows);
@@ -96,8 +110,9 @@ router.get("/dashboard/attendance-summary", requireAuth, async (req, res) => {
 });
 
 // GET /dashboard/recent-notices
-router.get("/dashboard/recent-notices", requireAuth, async (req, res) => {
+router.get("/dashboard/recent-notices", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const rows = await db
       .select({
         id: noticesTable.id,
@@ -117,6 +132,7 @@ router.get("/dashboard/recent-notices", requireAuth, async (req, res) => {
       })
       .from(noticesTable)
       .leftJoin(usersTable, eq(noticesTable.createdBy, usersTable.id))
+      .where(eq(noticesTable.schoolId, schoolId))
       .orderBy(sql`${noticesTable.createdAt} desc`)
       .limit(5);
     return res.json(rows);
@@ -127,8 +143,9 @@ router.get("/dashboard/recent-notices", requireAuth, async (req, res) => {
 });
 
 // GET /dashboard/fee-overview
-router.get("/dashboard/fee-overview", requireAuth, async (req, res) => {
+router.get("/dashboard/fee-overview", requireAuth, requireSchool, async (req, res) => {
   try {
+    const schoolId = (req as any).schoolId;
     const [stats] = await db
       .select({
         totalDue: sql<number>`coalesce(sum(${feeStructuresTable.amount}::numeric), 0)::numeric`,
@@ -138,7 +155,9 @@ router.get("/dashboard/fee-overview", requireAuth, async (req, res) => {
         pendingCount: sql<number>`count(*) filter (where ${feePaymentsTable.status} = 'pending')::int`,
       })
       .from(feePaymentsTable)
-      .leftJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id));
+      .innerJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .where(eq(classesTable.schoolId, schoolId));
 
     return res.json({
       totalDue: parseFloat(String(stats.totalDue)),

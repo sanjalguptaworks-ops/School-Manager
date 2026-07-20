@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, noticesTable, usersTable, classesTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireAuth, requireSchool } from "../middlewares/auth";
+import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { notifyNewNotice } from "../lib/notify";
 
 const router = Router();
@@ -45,55 +45,60 @@ router.get("/notices", requireAuth, requireSchool, async (req, res) => {
   }
 });
 
-// POST /notices
-router.post("/notices", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const schoolId = (req as any).schoolId;
-    const { title, body, targetRole, classId } = req.body;
-    if (!title || !body || !targetRole) {
-      return res.status(400).json({ error: "title, body, targetRole required" });
+// POST /notices — admin or teacher
+router.post("/notices", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { title, body, targetRole, classId } = req.body;
+      if (!title || !body || !targetRole) {
+        res.status(400).json({ error: "title, body, targetRole required" });
+        return;
+      }
+      const createdBy = (req as any).authUserId || null;
+
+      if (classId) {
+        const [cls] = await db
+          .select({ id: classesTable.id })
+          .from(classesTable)
+          .where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, schoolId)))
+          .limit(1);
+        if (!cls) { res.status(400).json({ error: "Invalid classId" }); return; }
+      }
+
+      const [notice] = await db
+        .insert(noticesTable)
+        .values({ title, body, targetRole, classId: classId || null, schoolId, createdBy })
+        .returning();
+
+      // Fire-and-forget: don't make the person wait for emails to send.
+      notifyNewNotice({ title: notice.title, body: notice.body, targetRole: notice.targetRole, classId: notice.classId });
+
+      res.status(201).json({ ...notice, createdByUser: null });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
-    const createdBy = (req as any).authUserId || null;
-
-    if (classId) {
-      const [cls] = await db
-        .select({ id: classesTable.id })
-        .from(classesTable)
-        .where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, schoolId)))
-        .limit(1);
-      if (!cls) return res.status(400).json({ error: "Invalid classId" });
-    }
-
-    const [notice] = await db
-      .insert(noticesTable)
-      .values({ title, body, targetRole, classId: classId || null, schoolId, createdBy })
-      .returning();
-
-    // Fire-and-forget: don't make the person wait for emails to send.
-    notifyNewNotice({ title: notice.title, body: notice.body, targetRole: notice.targetRole, classId: notice.classId });
-
-    return res.status(201).json({ ...notice, createdByUser: null });
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  });
 });
 
-// DELETE /notices/:id
-router.delete("/notices/:id", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const id = parseInt(req.params['id'] as string);
-    const schoolId = (req as any).schoolId;
-    const [deleted] = await db
-      .delete(noticesTable)
-      .where(and(eq(noticesTable.id, id), eq(noticesTable.schoolId, schoolId)))
-      .returning();
-    if (!deleted) return res.status(404).json({ error: "Not found" });
-    return res.status(204).send();
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+// DELETE /notices/:id — admin only
+router.delete("/notices/:id", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params['id'] as string);
+      const schoolId = (req as any).schoolId;
+      const [deleted] = await db
+        .delete(noticesTable)
+        .where(and(eq(noticesTable.id, id), eq(noticesTable.schoolId, schoolId)))
+        .returning();
+      if (!deleted) { res.status(404).json({ error: "Not found" }); return; }
+      res.status(204).send();
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
 export default router;

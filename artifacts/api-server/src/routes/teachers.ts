@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, teachersTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
-import { requireAuth, requireSchool } from "../middlewares/auth";
+import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 
 const router = Router();
@@ -54,29 +54,32 @@ router.get("/teachers", requireAuth, requireSchool, async (req, res) => {
   }
 });
 
-// POST /teachers
-router.post("/teachers", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const schoolId = (req as any).schoolId;
-    const { name, email, subjects = [] } = req.body;
-    if (!name || !email) {
-      return res.status(400).json({ error: "name and email required" });
+// POST /teachers — admin only
+router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { name, email, subjects = [] } = req.body;
+      if (!name || !email) {
+        res.status(400).json({ error: "name and email required" });
+        return;
+      }
+      const passwordHash = await hashPassword(generateTempPassword());
+      const [user] = await db
+        .insert(usersTable)
+        .values({ name, email: String(email).toLowerCase(), role: "teacher", passwordHash, schoolId })
+        .returning();
+      const [teacher] = await db
+        .insert(teachersTable)
+        .values({ userId: user.id, subjects })
+        .returning();
+      const full = await getTeacherWithUser(teacher.id, schoolId);
+      res.status(201).json(full);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
-    const passwordHash = await hashPassword(generateTempPassword());
-    const [user] = await db
-      .insert(usersTable)
-      .values({ name, email: String(email).toLowerCase(), role: "teacher", passwordHash, schoolId })
-      .returning();
-    const [teacher] = await db
-      .insert(teachersTable)
-      .values({ userId: user.id, subjects })
-      .returning();
-    const full = await getTeacherWithUser(teacher.id, schoolId);
-    return res.status(201).json(full);
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  });
 });
 
 // GET /teachers/:id
@@ -93,39 +96,43 @@ router.get("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   }
 });
 
-// PATCH /teachers/:id
-router.patch("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const id = parseInt(req.params['id'] as string);
-    const schoolId = (req as any).schoolId;
-    const existing = await getTeacherWithUser(id, schoolId);
-    if (!existing) return res.status(404).json({ error: "Not found" });
-    const { subjects } = req.body;
-    if (subjects !== undefined) {
-      await db.update(teachersTable).set({ subjects }).where(eq(teachersTable.id, id));
+// PATCH /teachers/:id — admin only
+router.patch("/teachers/:id", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params['id'] as string);
+      const schoolId = (req as any).schoolId;
+      const existing = await getTeacherWithUser(id, schoolId);
+      if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+      const { subjects } = req.body;
+      if (subjects !== undefined) {
+        await db.update(teachersTable).set({ subjects }).where(eq(teachersTable.id, id));
+      }
+      const teacher = await getTeacherWithUser(id, schoolId);
+      if (!teacher) { res.status(404).json({ error: "Not found" }); return; }
+      res.json(teacher);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
-    const teacher = await getTeacherWithUser(id, schoolId);
-    if (!teacher) return res.status(404).json({ error: "Not found" });
-    return res.json(teacher);
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  });
 });
 
-// DELETE /teachers/:id
-router.delete("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const id = parseInt(req.params['id'] as string);
-    const schoolId = (req as any).schoolId;
-    const existing = await getTeacherWithUser(id, schoolId);
-    if (!existing) return res.status(404).json({ error: "Not found" });
-    await db.delete(teachersTable).where(eq(teachersTable.id, id));
-    return res.status(204).send();
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+// DELETE /teachers/:id — admin only
+router.delete("/teachers/:id", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params['id'] as string);
+      const schoolId = (req as any).schoolId;
+      const existing = await getTeacherWithUser(id, schoolId);
+      if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+      await db.delete(teachersTable).where(eq(teachersTable.id, id));
+      res.status(204).send();
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
 export default router;

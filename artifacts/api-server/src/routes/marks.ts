@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, marksTable, studentsTable, examsTable, usersTable, classesTable } from "@workspace/db";
 import { eq, and, inArray, sql } from "drizzle-orm";
-import { requireAuth, requireSchool } from "../middlewares/auth";
+import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 
 const router = Router();
 
@@ -36,54 +36,58 @@ router.get("/marks", requireAuth, requireSchool, async (req, res) => {
   }
 });
 
-// POST /marks/bulk
-router.post("/marks/bulk", requireAuth, requireSchool, async (req, res) => {
-  try {
-    const schoolId = (req as any).schoolId;
-    const { examId, records } = req.body;
-    if (!examId || !Array.isArray(records)) {
-      return res.status(400).json({ error: "examId and records required" });
+// POST /marks/bulk — admin or teacher
+router.post("/marks/bulk", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { examId, records } = req.body;
+      if (!examId || !Array.isArray(records)) {
+        res.status(400).json({ error: "examId and records required" });
+        return;
+      }
+
+      const [exam] = await db
+        .select({ id: examsTable.id, classId: examsTable.classId })
+        .from(examsTable)
+        .innerJoin(classesTable, eq(examsTable.classId, classesTable.id))
+        .where(and(eq(examsTable.id, examId), eq(classesTable.schoolId, schoolId)))
+        .limit(1);
+      if (!exam) { res.status(400).json({ error: "Invalid examId" }); return; }
+
+      const studentIds = records.map((r: any) => r.studentId);
+      const validStudents = await db
+        .select({ id: studentsTable.id })
+        .from(studentsTable)
+        .where(and(eq(studentsTable.classId, exam.classId), inArray(studentsTable.id, studentIds)));
+      const validIds = new Set(validStudents.map((s) => s.id));
+      const filteredRecords = records.filter((r: any) => validIds.has(r.studentId));
+      if (filteredRecords.length === 0) {
+        res.json([]);
+        return;
+      }
+
+      const values = filteredRecords.map((r: any) => ({
+        examId,
+        studentId: r.studentId,
+        marksObtained: String(r.marksObtained),
+      }));
+
+      const result = await db
+        .insert(marksTable)
+        .values(values)
+        .onConflictDoUpdate({
+          target: [marksTable.examId, marksTable.studentId],
+          set: { marksObtained: sql`excluded.marks_obtained` },
+        })
+        .returning();
+
+      res.json(result);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
-
-    const [exam] = await db
-      .select({ id: examsTable.id, classId: examsTable.classId })
-      .from(examsTable)
-      .innerJoin(classesTable, eq(examsTable.classId, classesTable.id))
-      .where(and(eq(examsTable.id, examId), eq(classesTable.schoolId, schoolId)))
-      .limit(1);
-    if (!exam) return res.status(400).json({ error: "Invalid examId" });
-
-    const studentIds = records.map((r: any) => r.studentId);
-    const validStudents = await db
-      .select({ id: studentsTable.id })
-      .from(studentsTable)
-      .where(and(eq(studentsTable.classId, exam.classId), inArray(studentsTable.id, studentIds)));
-    const validIds = new Set(validStudents.map((s) => s.id));
-    const filteredRecords = records.filter((r: any) => validIds.has(r.studentId));
-    if (filteredRecords.length === 0) {
-      return res.json([]);
-    }
-
-    const values = filteredRecords.map((r: any) => ({
-      examId,
-      studentId: r.studentId,
-      marksObtained: String(r.marksObtained),
-    }));
-
-    const result = await db
-      .insert(marksTable)
-      .values(values)
-      .onConflictDoUpdate({
-        target: [marksTable.examId, marksTable.studentId],
-        set: { marksObtained: sql`excluded.marks_obtained` },
-      })
-      .returning();
-
-    return res.json(result);
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
+  });
 });
 
 // GET /marks/report/:studentId

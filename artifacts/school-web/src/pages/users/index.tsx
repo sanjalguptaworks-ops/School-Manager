@@ -536,7 +536,9 @@ function EditProfileDialog({ targetUser, onDone }: { targetUser: any; onDone: ()
                 onChange={handlePhotoChange}
               />
             </div>
-            <p className="text-xs text-muted-foreground">Click the photo to change it.</p>
+            <p className="text-xs text-muted-foreground">
+              {uploadingPhoto ? "Uploading photo…" : "Click the photo to change it."}
+            </p>
           </div>
           <div className="space-y-1.5">
             <Label>Name</Label>
@@ -553,8 +555,8 @@ function EditProfileDialog({ targetUser, onDone }: { targetUser: any; onDone: ()
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving || !name.trim() || !email.trim()}>
-            {saving ? "Saving..." : "Save changes"}
+          <Button onClick={handleSave} disabled={saving || uploadingPhoto || !name.trim() || !email.trim()}>
+            {saving ? "Saving..." : uploadingPhoto ? "Uploading photo…" : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

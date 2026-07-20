@@ -37,8 +37,11 @@ const AuthContext = createContext<AuthContextType>({
   refresh: async () => null,
 });
 
-const REFRESH_RETRIES = 2;
-const REFRESH_RETRY_DELAY_MS = 1500;
+// Render's free tier can take 50+ seconds to wake a spun-down instance, so
+// this needs to keep retrying well past that — a short retry window just
+// gives up before the server has actually finished waking up.
+const REFRESH_RETRIES = 17;
+const REFRESH_RETRY_DELAY_MS = 4000;
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -88,29 +91,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ email, password }),
-        });
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          return { ok: false, error: data.error || "Invalid email or password" };
+      // A cold-started backend answers with a 502/503/504 (or a network
+      // error) before it's actually listening — that's worth retrying, same
+      // as refresh() below. An actual rejection (wrong password, account
+      // not approved, etc.) should surface immediately, not be retried.
+      for (let attempt = 0; attempt <= REFRESH_RETRIES; attempt++) {
+        try {
+          const res = await fetch(`${BASE_URL}/api/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ email, password }),
+          });
+          if (res.ok) {
+            const me = await refresh();
+            if (!me) {
+              return {
+                ok: false,
+                error:
+                  "Your password was correct, but we couldn't confirm your session afterward. This can happen if your browser is blocking cookies (try a different browser or turning off strict tracking protection for this site) or if the server is briefly unreachable — try signing in again.",
+              };
+            }
+            return { ok: true };
+          }
+          if (![502, 503, 504].includes(res.status)) {
+            const data = await res.json().catch(() => ({}));
+            return { ok: false, error: data.error || "Invalid email or password" };
+          }
+        } catch {
+          // Network error — worth retrying, same as a 502/503/504.
         }
-        const me = await refresh();
-        if (!me) {
-          return {
-            ok: false,
-            error:
-              "Your password was correct, but we couldn't confirm your session afterward. This can happen if your browser is blocking cookies (try a different browser or turning off strict tracking protection for this site) or if the server is briefly unreachable — try signing in again.",
-          };
-        }
-        return { ok: true };
-      } catch {
-        return { ok: false, error: "Could not reach the server. Try again." };
+        if (attempt < REFRESH_RETRIES) await sleep(REFRESH_RETRY_DELAY_MS);
       }
+      return { ok: false, error: "Could not reach the server after several attempts. Please try again in a bit." };
     },
     [refresh],
   );

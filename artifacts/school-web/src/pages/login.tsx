@@ -12,12 +12,16 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showColdStartHint, setShowColdStartHint] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+    const hintTimer = setTimeout(() => setShowColdStartHint(true), 4000);
     const result = await login(email, password);
+    clearTimeout(hintTimer);
+    setShowColdStartHint(false);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error || "Invalid email or password");
@@ -68,6 +72,12 @@ export default function LoginPage() {
 
           {error && (
             <p className="text-sm text-destructive bg-destructive/10 rounded-md p-2">{error}</p>
+          )}
+
+          {submitting && showColdStartHint && (
+            <p className="text-xs text-muted-foreground text-center">
+              This can take up to a minute if the server has been idle. Hang tight…
+            </p>
           )}
 
           <Button type="submit" className="w-full" disabled={submitting}>

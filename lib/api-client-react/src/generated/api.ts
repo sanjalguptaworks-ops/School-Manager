@@ -407,7 +407,7 @@ export const getUpdateUserUrl = (id: number,) => {
 }
 
 /**
- * @summary Update user role (admin only)
+ * @summary Update a user's profile — name, email, phone, avatar, role (admin only)
  */
 export const updateUser = async (id: number,
     userUpdate: UserUpdate, options?: RequestInit): Promise<User> => {
@@ -457,7 +457,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateUserMutationError = ErrorType<unknown>
 
     /**
- * @summary Update user role (admin only)
+ * @summary Update a user's profile — name, email, phone, avatar, role (admin only)
  */
 export const useUpdateUser = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateUser>>, TError,{id: number;data: BodyType<UserUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}

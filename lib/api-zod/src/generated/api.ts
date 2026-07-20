@@ -24,6 +24,8 @@ export const GetCurrentUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 })
@@ -40,6 +42,8 @@ export const ListUsersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 })
@@ -62,13 +66,15 @@ export const CreateUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 })
 
 
 /**
- * @summary Update user role (admin only)
+ * @summary Update a user's profile — name, email, phone, avatar, role (admin only)
  */
 export const UpdateUserParams = zod.object({
   "id": zod.coerce.number()
@@ -79,6 +85,9 @@ export const UpdateUserParams = zod.object({
 
 export const UpdateUserBody = zod.object({
   "name": zod.string().min(1).optional(),
+  "email": zod.string().optional(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']).optional()
 })
 
@@ -86,6 +95,8 @@ export const UpdateUserResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 })
@@ -201,6 +212,8 @@ export const ListStudentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -242,6 +255,8 @@ export const CreateStudentResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -273,6 +288,8 @@ export const GetStudentResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -312,6 +329,8 @@ export const UpdateStudentResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -345,6 +364,8 @@ export const ListTeachersResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -372,6 +393,8 @@ export const CreateTeacherResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -393,6 +416,8 @@ export const GetTeacherResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -418,6 +443,8 @@ export const UpdateTeacherResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -463,6 +490,8 @@ export const ListAttendanceResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -508,6 +537,8 @@ export const MarkAttendanceBulkResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -552,6 +583,8 @@ export const UpdateAttendanceResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -713,6 +746,8 @@ export const ListMarksResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -769,6 +804,8 @@ export const EnterMarksBulkResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -817,6 +854,8 @@ export const GetReportCardResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -868,6 +907,8 @@ export const ListNoticesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -901,6 +942,8 @@ export const CreateNoticeResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
@@ -997,6 +1040,8 @@ export const ListFeePaymentsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -1049,6 +1094,8 @@ export const MarkFeePaidResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional(),
@@ -1123,6 +1170,8 @@ export const GetRecentNoticesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()

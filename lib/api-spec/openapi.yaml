@@ -104,7 +104,7 @@ paths:
     patch:
       operationId: updateUser
       tags: [users]
-      summary: Update user role (admin only)
+      summary: Update a user's profile — name, email, phone, avatar, role (admin only)
       parameters:
         - name: id
           in: path
@@ -874,6 +874,12 @@ components:
           type: string
         email:
           type: string
+        phone:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
         role:
           type: string
           enum: [admin, teacher, student, parent]
@@ -896,10 +902,19 @@ components:
 
     UserUpdate:
       type: object
+      summary: Admin-only full profile update (name/email/phone/avatar/role) for any user in their school
       properties:
         name:
           type: string
           minLength: 1
+        email:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
         role:
           type: string
           enum: [admin, teacher, student, parent]

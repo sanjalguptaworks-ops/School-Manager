@@ -11,6 +11,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
   role: UserRole;
   createdAt: Date;
 }

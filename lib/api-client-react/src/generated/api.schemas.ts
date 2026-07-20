@@ -23,6 +23,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
   role: UserRole;
   createdAt: string;
 }
@@ -54,9 +56,15 @@ export const UserUpdateRole = {
   parent: 'parent',
 } as const;
 
+/**
+ * @summary Admin-only full profile update (name/email/phone/avatar/role) for any user in their school
+ */
 export interface UserUpdate {
   /** @minLength 1 */
   name?: string;
+  email?: string;
+  phone?: string | null;
+  avatarUrl?: string | null;
   role?: UserUpdateRole;
 }
 

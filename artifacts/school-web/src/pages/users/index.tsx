@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   useListUsers,
   useUpdateUser,
@@ -30,7 +30,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { Plus, Copy, Check, ShieldCheck, Link2, Pencil, KeyRound } from "lucide-react";
+import { uploadProfilePicture } from "@/lib/upload-image";
+import { Plus, Copy, Check, ShieldCheck, Link2, Pencil, KeyRound, Camera } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -89,19 +90,6 @@ function UserManagement() {
           toast({ title: "Role updated" });
         },
         onError: () => toast({ title: "Failed to update role", variant: "destructive" }),
-      }
-    );
-  };
-
-  const handleNameSave = (id: number, newName: string) => {
-    updateUser.mutate(
-      { id, data: { name: newName } as any },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
-          toast({ title: "Name updated" });
-        },
-        onError: () => toast({ title: "Failed to update name", variant: "destructive" }),
       }
     );
   };
@@ -173,14 +161,14 @@ function UserManagement() {
                     <TableCell className="pl-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
-                          {(u as any).avatarUrl ? (
-                            <img src={(u as any).avatarUrl} alt={u.name} className="w-full h-full object-cover" />
+                          {u.avatarUrl ? (
+                            <img src={u.avatarUrl} alt={u.name} className="w-full h-full object-cover" />
                           ) : (
                             u.name.charAt(0).toUpperCase()
                           )}
                         </div>
                         <div>
-                          <EditableName user={u} onSave={handleNameSave} />
+                          <p className="font-medium text-sm">{u.name}</p>
                           <p className="text-xs text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
@@ -201,6 +189,10 @@ function UserManagement() {
                             onDone={() => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() })}
                           />
                         )}
+                        <EditProfileDialog
+                          targetUser={u}
+                          onDone={() => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() })}
+                        />
                         <ResetPasswordDialog targetUser={u} />
                         <Select
                           value={u.role}
@@ -441,43 +433,132 @@ function InviteUserDialog() {
   );
 }
 
-// ── Editable name (inline) ────────────────────────────────────────────────
+// ── Edit Profile Dialog (admin: full profile edit for any user) ──────────
 
-function EditableName({ user, onSave }: { user: any; onSave: (id: number, name: string) => void }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(user.name);
+function EditProfileDialog({ targetUser, onDone }: { targetUser: any; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(targetUser.name);
+  const [email, setEmail] = useState(targetUser.email);
+  const [phone, setPhone] = useState(targetUser.phone || "");
+  const [avatarUrl, setAvatarUrl] = useState(targetUser.avatarUrl || "");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const updateUser = useUpdateUser();
 
-  if (!editing) {
-    return (
-      <button
-        type="button"
-        onClick={() => { setValue(user.name); setEditing(true); }}
-        className="group flex items-center gap-1.5 font-medium text-sm hover:text-primary"
-      >
-        {user.name}
-        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-60" />
-      </button>
+  const handleOpen = (v: boolean) => {
+    setOpen(v);
+    if (v) {
+      setName(targetUser.name);
+      setEmail(targetUser.email);
+      setPhone(targetUser.phone || "");
+      setAvatarUrl(targetUser.avatarUrl || "");
+    }
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please choose an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image is too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const url = await uploadProfilePicture(file);
+      setAvatarUrl(url);
+    } catch (err: any) {
+      toast({ title: err?.message || "Could not upload photo", variant: "destructive" });
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleSave = () => {
+    setSaving(true);
+    updateUser.mutate(
+      { id: targetUser.id, data: { name, email, phone: phone || null, avatarUrl: avatarUrl || null } },
+      {
+        onSuccess: () => {
+          onDone();
+          setOpen(false);
+          toast({ title: "Profile updated" });
+        },
+        onError: (err: any) => toast({ title: err?.message || "Failed to update profile", variant: "destructive" }),
+        onSettled: () => setSaving(false),
+      },
     );
-  }
-
-  const commit = () => {
-    const trimmed = value.trim();
-    setEditing(false);
-    if (trimmed && trimmed !== user.name) onSave(user.id, trimmed);
   };
 
   return (
-    <Input
-      autoFocus
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onBlur={commit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") commit();
-        if (e.key === "Escape") setEditing(false);
-      }}
-      className="h-7 text-sm w-40"
-    />
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="h-8 gap-1 text-xs">
+          <Pencil className="w-3 h-3" /> Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Profile — {targetUser.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl overflow-hidden relative group shrink-0">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+              ) : (
+                name.charAt(0).toUpperCase()
+              )}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute inset-0 rounded-full bg-black/40 text-white flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+                title="Change photo"
+              >
+                {uploadingPhoto ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">Click the photo to change it.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone</Label>
+            <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Optional" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving || !name.trim() || !email.trim()}>
+            {saving ? "Saving..." : "Save changes"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

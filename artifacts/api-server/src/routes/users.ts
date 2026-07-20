@@ -213,10 +213,20 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
 router.post("/users/:id/reset-password", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
+      const authUserId = (req as any).authUserId;
+      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      if (!me?.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school" });
+        return;
+      }
       const id = parseInt(req.params["id"] as string);
       const tempPassword = generateTempPassword();
       const passwordHash = await hashPassword(tempPassword);
-      const [updated] = await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, id)).returning();
+      const [updated] = await db
+        .update(usersTable)
+        .set({ passwordHash })
+        .where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId)))
+        .returning();
       if (!updated) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -229,17 +239,41 @@ router.post("/users/:id/reset-password", requireAuth, async (req, res): Promise<
   });
 });
 
-// PATCH /users/:id — admin only (e.g. changing someone else's role or
-// fixing their name). Regular users should use PATCH /users/me instead.
+// PATCH /users/:id — admin only. Full profile edit (name, email, phone,
+// avatar, role) for anyone in the admin's own school. Regular users edit
+// their own profile via PATCH /users/me instead.
 router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
+      const authUserId = (req as any).authUserId;
+      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      if (!me?.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school" });
+        return;
+      }
       const id = parseInt(req.params["id"] as string);
-      const { name, role } = req.body;
+      const { name, role, email, phone, avatarUrl } = req.body;
       const updates: Record<string, any> = {};
       if (name) updates.name = name;
       if (role) updates.role = role;
-      const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, id)).returning();
+      if (typeof phone === "string") updates.phone = phone.trim() || null;
+      if (typeof avatarUrl === "string") updates.avatarUrl = avatarUrl.trim() || null;
+
+      if (typeof email === "string" && email.trim()) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const clash = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, normalizedEmail)).limit(1);
+        if (clash[0] && clash[0].id !== id) {
+          res.status(409).json({ error: "That email is already in use by another account" });
+          return;
+        }
+        updates.email = normalizedEmail;
+      }
+
+      const [updated] = await db
+        .update(usersTable)
+        .set(updates)
+        .where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId)))
+        .returning();
       if (!updated) { res.status(404).json({ error: "Not found" }); return; }
       const { passwordHash, ...safeUser } = updated;
       res.json(safeUser);
@@ -254,8 +288,18 @@ router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
 router.delete("/users/:id", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
+      const authUserId = (req as any).authUserId;
+      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      if (!me?.schoolId) {
+        res.status(403).json({ error: "Your account isn't linked to a school" });
+        return;
+      }
       const id = parseInt(req.params["id"] as string);
-      await db.delete(usersTable).where(eq(usersTable.id, id));
+      const [deleted] = await db
+        .delete(usersTable)
+        .where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId)))
+        .returning();
+      if (!deleted) { res.status(404).json({ error: "Not found" }); return; }
       res.status(204).send();
     } catch (err) {
       req.log.error(err);

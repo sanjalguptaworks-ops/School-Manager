@@ -30,7 +30,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { Plus, Copy, Check, ShieldCheck, Link2 } from "lucide-react";
+import { Plus, Copy, Check, ShieldCheck, Link2, Pencil, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -93,6 +93,19 @@ function UserManagement() {
     );
   };
 
+  const handleNameSave = (id: number, newName: string) => {
+    updateUser.mutate(
+      { id, data: { name: newName } as any },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
+          toast({ title: "Name updated" });
+        },
+        onError: () => toast({ title: "Failed to update name", variant: "destructive" }),
+      }
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -135,7 +148,7 @@ function UserManagement() {
               <TableHead className="pl-6">User</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Joined</TableHead>
-              <TableHead className="text-right pr-6">Change Role</TableHead>
+              <TableHead className="text-right pr-6">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -159,11 +172,15 @@ function UserManagement() {
                   <TableRow key={u.id}>
                     <TableCell className="pl-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                          {u.name.charAt(0).toUpperCase()}
+                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
+                          {(u as any).avatarUrl ? (
+                            <img src={(u as any).avatarUrl} alt={u.name} className="w-full h-full object-cover" />
+                          ) : (
+                            u.name.charAt(0).toUpperCase()
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium text-sm">{u.name}</p>
+                          <EditableName user={u} onSave={handleNameSave} />
                           <p className="text-xs text-muted-foreground">{u.email}</p>
                         </div>
                       </div>
@@ -184,6 +201,7 @@ function UserManagement() {
                             onDone={() => queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() })}
                           />
                         )}
+                        <ResetPasswordDialog targetUser={u} />
                         <Select
                           value={u.role}
                           onValueChange={(val) => handleRoleChange(u.id, val)}
@@ -423,7 +441,142 @@ function InviteUserDialog() {
   );
 }
 
-// ── Manage Children Dialog (parent role) ─────────────────────────────────────
+// ── Editable name (inline) ────────────────────────────────────────────────
+
+function EditableName({ user, onSave }: { user: any; onSave: (id: number, name: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(user.name);
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setValue(user.name); setEditing(true); }}
+        className="group flex items-center gap-1.5 font-medium text-sm hover:text-primary"
+      >
+        {user.name}
+        <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-60" />
+      </button>
+    );
+  }
+
+  const commit = () => {
+    const trimmed = value.trim();
+    setEditing(false);
+    if (trimmed && trimmed !== user.name) onSave(user.id, trimmed);
+  };
+
+  return (
+    <Input
+      autoFocus
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") setEditing(false);
+      }}
+      className="h-7 text-sm w-40"
+    />
+  );
+}
+
+// ── Reset Password Dialog ─────────────────────────────────────────────────
+
+function ResetPasswordDialog({ targetUser }: { targetUser: any }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleOpen = (v: boolean) => {
+    setOpen(v);
+    if (!v) {
+      setTempPassword(null);
+      setCopied(false);
+    }
+  };
+
+  const handleReset = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/users/${targetUser.id}/reset-password`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to reset password");
+      setTempPassword(data.tempPassword);
+    } catch (err: any) {
+      toast({ title: err.message || "Failed to reset password", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (!tempPassword) return;
+    navigator.clipboard.writeText(tempPassword);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="h-8 gap-1 text-xs">
+          <KeyRound className="w-3 h-3" /> Reset Password
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Reset Password — {targetUser.name}</DialogTitle>
+        </DialogHeader>
+
+        {!tempPassword ? (
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              This immediately replaces {targetUser.name}'s current password with a new temporary one.
+              They'll be signed out of any existing session and need to use the new password to log back in.
+            </p>
+          </div>
+        ) : (
+          <div className="py-2 space-y-3">
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                New Temporary Password — Share with {targetUser.name}
+              </p>
+              <p className="text-sm font-mono font-bold bg-yellow-50 border border-yellow-200 px-2 py-1 rounded text-center">
+                {tempPassword}
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This won't be shown again. The user should change it after logging in via their Profile page.
+            </p>
+            <Button variant="outline" className="w-full" onClick={handleCopy}>
+              {copied ? <><Check className="w-4 h-4 mr-2 text-green-600" /> Copied!</> : <><Copy className="w-4 h-4 mr-2" /> Copy Password</>}
+            </Button>
+          </div>
+        )}
+
+        <DialogFooter>
+          {!tempPassword ? (
+            <>
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleReset} disabled={loading}>
+                {loading ? "Resetting…" : "Reset Password"}
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setOpen(false)}>Done</Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function ManageChildrenDialog({
   parent,

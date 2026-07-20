@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db, usersTable, studentsTable, teachersTable, emailChangesTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
-import { hashPassword } from "../lib/password";
+import { hashPassword, generateTempPassword } from "../lib/password";
 import { signEmailChangeToken, verifyEmailChangeToken } from "../lib/jwt";
 import { sendEmailChangeConfirmation } from "../lib/mailer";
 import crypto from "crypto";
@@ -155,39 +155,65 @@ router.post("/users/confirm-email-change", async (req, res): Promise<void> => {
   }
 });
 
-// GET /users
+// GET /users — admin only (lists everyone's name/email/role)
 router.get("/users", requireAuth, async (req, res): Promise<void> => {
-  try {
-    const { role } = req.query as { role?: string };
-    const rows = role
-      ? await db.select().from(usersTable).where(eq(usersTable.role, role as any))
-      : await db.select().from(usersTable);
-    res.json(rows.map(({ passwordHash, ...u }) => u));
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const { role } = req.query as { role?: string };
+      const rows = role
+        ? await db.select().from(usersTable).where(eq(usersTable.role, role as any))
+        : await db.select().from(usersTable);
+      res.json(rows.map(({ passwordHash, ...u }) => u));
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
-// POST /users (admin creates a user directly with a temp password)
+// POST /users — admin only (creates a user directly with a temp password)
 router.post("/users", requireAuth, async (req, res): Promise<void> => {
-  try {
-    const { name, email, role, password } = req.body;
-    if (!name || !email || !role || !password) {
-      res.status(400).json({ error: "name, email, role, password required" });
-      return;
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const { name, email, role, password } = req.body;
+      if (!name || !email || !role || !password) {
+        res.status(400).json({ error: "name, email, role, password required" });
+        return;
+      }
+      const passwordHash = await hashPassword(password);
+      const [user] = await db
+        .insert(usersTable)
+        .values({ name, email: String(email).toLowerCase(), role, passwordHash })
+        .returning();
+      const { passwordHash: _omit, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
     }
-    const passwordHash = await hashPassword(password);
-    const [user] = await db
-      .insert(usersTable)
-      .values({ name, email: String(email).toLowerCase(), role, passwordHash })
-      .returning();
-    const { passwordHash: _omit, ...safeUser } = user;
-    res.status(201).json(safeUser);
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
+  });
+});
+
+// POST /users/:id/reset-password — admin only. Generates a brand new
+// temporary password for someone else's account and returns it once, so
+// the admin can hand it to them directly (same pattern as the invite flow).
+router.post("/users/:id/reset-password", requireAuth, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const id = parseInt(req.params["id"] as string);
+      const tempPassword = generateTempPassword();
+      const passwordHash = await hashPassword(tempPassword);
+      const [updated] = await db.update(usersTable).set({ passwordHash }).where(eq(usersTable.id, id)).returning();
+      if (!updated) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      res.json({ tempPassword });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
 // PATCH /users/:id — admin only (e.g. changing someone else's role or

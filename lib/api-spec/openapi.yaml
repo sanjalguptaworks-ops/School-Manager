@@ -258,11 +258,11 @@ paths:
               $ref: "#/components/schemas/StudentInput"
       responses:
         "201":
-          description: Created
+          description: Created — includes the one-time temporary password
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Student"
+                $ref: "#/components/schemas/StudentCreated"
 
   /students/{id}:
     get:
@@ -346,11 +346,11 @@ paths:
               $ref: "#/components/schemas/TeacherInput"
       responses:
         "201":
-          description: Created
+          description: Created — includes the one-time temporary password
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Teacher"
+                $ref: "#/components/schemas/TeacherCreated"
 
   /teachers/{id}:
     get:
@@ -1015,6 +1015,16 @@ components:
         guardianContact:
           type: string
 
+    StudentCreated:
+      description: A newly created student, plus the one-time temporary password for their new account.
+      allOf:
+        - $ref: "#/components/schemas/Student"
+        - type: object
+          required: [tempPassword]
+          properties:
+            tempPassword:
+              type: string
+
     # ── Teacher ───────────────────────────────────────────────────────────
     Teacher:
       type: object
@@ -1052,6 +1062,16 @@ components:
           type: array
           items:
             type: string
+
+    TeacherCreated:
+      description: A newly created teacher, plus the one-time temporary password for their new account.
+      allOf:
+        - $ref: "#/components/schemas/Teacher"
+        - type: object
+          required: [tempPassword]
+          properties:
+            tempPassword:
+              type: string
 
     # ── Attendance ────────────────────────────────────────────────────────
     AttendanceRecord:

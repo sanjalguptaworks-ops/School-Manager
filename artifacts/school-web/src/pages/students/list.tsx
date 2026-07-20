@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Search, Plus, UserCircle, Loader2 } from "lucide-react";
+import { Search, Plus, UserCircle, Loader2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -169,6 +169,9 @@ const formSchema = z.object({
 
 function AddStudentDialog({ classes }: { classes: any[] }) {
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"form" | "result">("form");
+  const [result, setResult] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const createStudent = useCreateStudent();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -189,11 +192,11 @@ function AddStudentDialog({ classes }: { classes: any[] }) {
     createStudent.mutate(
       { data: values },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           queryClient.invalidateQueries({ queryKey: getListStudentsQueryKey() });
-          setOpen(false);
+          setResult({ email: values.email, tempPassword: data.tempPassword });
+          setStep("result");
           form.reset();
-          toast({ title: "Student created successfully" });
         },
         onError: (err: any) => {
           toast({ title: "Error creating student", description: err.message, variant: "destructive" });
@@ -202,97 +205,151 @@ function AddStudentDialog({ classes }: { classes: any[] }) {
     );
   }
 
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) {
+      setStep("form");
+      setResult(null);
+      setCopied(false);
+    }
+  };
+
+  const handleCopy = () => {
+    if (!result) return;
+    navigator.clipboard.writeText(`Email: ${result.email}\nPassword: ${result.tempPassword}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="shadow-sm"><Plus className="w-4 h-4 mr-2" /> Add Student</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Add New Student</DialogTitle>
-          <DialogDescription>Create a new student record and user account.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="classId" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Class</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {classes.map(c => (
-                        <SelectItem key={c.id} value={c.id.toString()}>{c.name} {c.section}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="rollNo" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Roll No</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+        {step === "form" ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Add New Student</DialogTitle>
+              <DialogDescription>Create a new student record and user account.</DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl><Input type="email" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="dob" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <FormControl><Input type="date" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="guardianContact" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Guardian Contact</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="classId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Class</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {classes.map(c => (
+                            <SelectItem key={c.id} value={c.id.toString()}>{c.name} {c.section}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="rollNo" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Roll No</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-            <FormField control={form.control} name="guardianName" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Guardian Name</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="dob" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Date of Birth</FormLabel>
+                      <FormControl><Input type="date" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="guardianContact" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Guardian Contact</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
 
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={createStudent.isPending}>
-                {createStudent.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Save Student
+                <FormField control={form.control} name="guardianName" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guardian Name</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <DialogFooter className="pt-4">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button type="submit" disabled={createStudent.isPending}>
+                    {createStudent.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Save Student
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Student Account Created</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Login Credentials — Share with the student
+                </p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Email</span>
+                    <span className="text-sm font-mono font-medium">{result?.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Temporary Password</span>
+                    <span className="text-sm font-mono font-bold bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded">
+                      {result?.tempPassword}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This won't be shown again. The student should change it after logging in via their Profile page.
+                </p>
+              </div>
+              <Button variant="outline" className="w-full" onClick={handleCopy}>
+                {copied ? <><Check className="w-4 h-4 mr-2 text-green-600" /> Copied!</> : <><Copy className="w-4 h-4 mr-2" /> Copy Credentials</>}
               </Button>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)}>Done</Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -123,6 +123,13 @@ export interface StudentUpdate {
   guardianContact?: string;
 }
 
+/**
+ * A newly created student, plus the one-time temporary password for their new account.
+ */
+export type StudentCreated = Student & {
+  tempPassword: string;
+};
+
 export interface Teacher {
   id: number;
   userId: number;
@@ -140,6 +147,13 @@ export interface TeacherInput {
 export interface TeacherUpdate {
   subjects?: string[];
 }
+
+/**
+ * A newly created teacher, plus the one-time temporary password for their new account.
+ */
+export type TeacherCreated = Teacher & {
+  tempPassword: string;
+};
 
 export type AttendanceRecordStatus = typeof AttendanceRecordStatus[keyof typeof AttendanceRecordStatus];
 

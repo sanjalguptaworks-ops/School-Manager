@@ -64,7 +64,8 @@ router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<v
         res.status(400).json({ error: "name and email required" });
         return;
       }
-      const passwordHash = await hashPassword(generateTempPassword());
+      const tempPassword = generateTempPassword();
+      const passwordHash = await hashPassword(tempPassword);
       const [user] = await db
         .insert(usersTable)
         .values({ name, email: String(email).toLowerCase(), role: "teacher", passwordHash, schoolId })
@@ -74,7 +75,7 @@ router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<v
         .values({ userId: user.id, subjects })
         .returning();
       const full = await getTeacherWithUser(teacher.id, schoolId);
-      res.status(201).json(full);
+      res.status(201).json({ ...full, tempPassword });
     } catch (err) {
       req.log.error(err);
       res.status(500).json({ error: "Internal server error" });

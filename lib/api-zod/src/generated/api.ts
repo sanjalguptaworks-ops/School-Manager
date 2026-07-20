@@ -266,7 +266,9 @@ export const CreateStudentResponse = zod.object({
   "section": zod.string(),
   "studentCount": zod.number().optional()
 }).optional()
-})
+}).and(zod.object({
+  "tempPassword": zod.string()
+})).describe('A newly created student, plus the one-time temporary password for their new account.')
 
 
 /**
@@ -398,7 +400,9 @@ export const CreateTeacherResponse = zod.object({
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
 }).optional()
-})
+}).and(zod.object({
+  "tempPassword": zod.string()
+})).describe('A newly created teacher, plus the one-time temporary password for their new account.')
 
 
 /**

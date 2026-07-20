@@ -50,10 +50,12 @@ import type {
   Notice,
   NoticeInput,
   Student,
+  StudentCreated,
   StudentInput,
   StudentReport,
   StudentUpdate,
   Teacher,
+  TeacherCreated,
   TeacherInput,
   TeacherUpdate,
   User,
@@ -1004,9 +1006,9 @@ export const getCreateStudentUrl = () => {
 /**
  * @summary Create a student (admin only)
  */
-export const createStudent = async (studentInput: StudentInput, options?: RequestInit): Promise<Student> => {
+export const createStudent = async (studentInput: StudentInput, options?: RequestInit): Promise<StudentCreated> => {
 
-  return customFetch<Student>(getCreateStudentUrl(),
+  return customFetch<StudentCreated>(getCreateStudentUrl(),
   {
     ...options,
     method: 'POST',
@@ -1372,9 +1374,9 @@ export const getCreateTeacherUrl = () => {
 /**
  * @summary Create a teacher (admin only)
  */
-export const createTeacher = async (teacherInput: TeacherInput, options?: RequestInit): Promise<Teacher> => {
+export const createTeacher = async (teacherInput: TeacherInput, options?: RequestInit): Promise<TeacherCreated> => {
 
-  return customFetch<Teacher>(getCreateTeacherUrl(),
+  return customFetch<TeacherCreated>(getCreateTeacherUrl(),
   {
     ...options,
     method: 'POST',

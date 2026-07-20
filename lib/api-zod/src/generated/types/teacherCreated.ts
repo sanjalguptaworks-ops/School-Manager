@@ -12,4 +12,6 @@ import type { Teacher } from './teacher';
  */
 export type TeacherCreated = Teacher & {
   tempPassword: string;
+  /** Whether the welcome email with these credentials was successfully sent. */
+  emailSent?: boolean;
 };

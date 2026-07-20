@@ -52,7 +52,7 @@ async function inviteUser(payload: Record<string, any>) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Invite failed");
-  return data as { user: any; tempPassword: string; teacherId: number | null; studentId: number | null };
+  return data as { user: any; tempPassword: string; teacherId: number | null; studentId: number | null; emailSent: boolean };
 }
 
 export default function UsersPage() {
@@ -225,7 +225,7 @@ function UserManagement() {
 function InviteUserDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"form" | "result">("form");
-  const [result, setResult] = useState<{ user: any; tempPassword: string } | null>(null);
+  const [result, setResult] = useState<{ user: any; tempPassword: string; emailSent: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Form state
@@ -404,6 +404,15 @@ function InviteUserDialog() {
               <p className="text-xs text-muted-foreground">The user should change their password after first sign-in via the Profile page.</p>
             </div>
 
+            {result?.emailSent ? (
+              <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+                These credentials were also emailed to {result.user.email}.
+              </p>
+            ) : (
+              <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-2">
+                Couldn't send this by email — please share these credentials manually.
+              </p>
+            )}
             <Button variant="outline" className="w-full" onClick={handleCopy}>
               {copied ? <><Check className="w-4 h-4 mr-2 text-green-600" /> Copied!</> : <><Copy className="w-4 h-4 mr-2" /> Copy Credentials</>}
             </Button>

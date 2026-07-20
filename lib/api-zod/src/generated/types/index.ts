@@ -56,6 +56,7 @@ export * from './teacherCreated';
 export * from './teacherInput';
 export * from './teacherUpdate';
 export * from './user';
+export * from './userCreated';
 export * from './userInput';
 export * from './userInputRole';
 export * from './userRole';

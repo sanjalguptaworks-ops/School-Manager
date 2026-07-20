@@ -68,6 +68,13 @@ export interface UserUpdate {
   role?: UserUpdateRole;
 }
 
+/**
+ * A newly created user, plus whether the welcome email was successfully sent.
+ */
+export type UserCreated = User & {
+  emailSent?: boolean;
+};
+
 export interface Class {
   id: number;
   name: string;
@@ -128,6 +135,8 @@ export interface StudentUpdate {
  */
 export type StudentCreated = Student & {
   tempPassword: string;
+  /** Whether the welcome email with these credentials was successfully sent. */
+  emailSent?: boolean;
 };
 
 export interface Teacher {
@@ -153,6 +162,8 @@ export interface TeacherUpdate {
  */
 export type TeacherCreated = Teacher & {
   tempPassword: string;
+  /** Whether the welcome email with these credentials was successfully sent. */
+  emailSent?: boolean;
 };
 
 export type AttendanceRecordStatus = typeof AttendanceRecordStatus[keyof typeof AttendanceRecordStatus];

@@ -170,7 +170,7 @@ const formSchema = z.object({
 function AddStudentDialog({ classes }: { classes: any[] }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"form" | "result">("form");
-  const [result, setResult] = useState<{ email: string; tempPassword: string } | null>(null);
+  const [result, setResult] = useState<{ email: string; tempPassword: string; emailSent: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
   const createStudent = useCreateStudent();
   const queryClient = useQueryClient();
@@ -194,7 +194,7 @@ function AddStudentDialog({ classes }: { classes: any[] }) {
       {
         onSuccess: (data: any) => {
           queryClient.invalidateQueries({ queryKey: getListStudentsQueryKey() });
-          setResult({ email: values.email, tempPassword: data.tempPassword });
+          setResult({ email: values.email, tempPassword: data.tempPassword, emailSent: !!data.emailSent });
           setStep("result");
           form.reset();
         },
@@ -341,6 +341,15 @@ function AddStudentDialog({ classes }: { classes: any[] }) {
                   This won't be shown again. The student should change it after logging in via their Profile page.
                 </p>
               </div>
+              {result?.emailSent ? (
+                <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+                  These credentials were also emailed to {result.email}.
+                </p>
+              ) : (
+                <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-2">
+                  Couldn't send this by email — please share these credentials manually.
+                </p>
+              )}
               <Button variant="outline" className="w-full" onClick={handleCopy}>
                 {copied ? <><Check className="w-4 h-4 mr-2 text-green-600" /> Copied!</> : <><Copy className="w-4 h-4 mr-2" /> Copy Credentials</>}
               </Button>

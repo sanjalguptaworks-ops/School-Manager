@@ -59,6 +59,7 @@ import type {
   TeacherInput,
   TeacherUpdate,
   User,
+  UserCreated,
   UserInput,
   UserUpdate
 } from './api.schemas';
@@ -340,9 +341,9 @@ export const getCreateUserUrl = () => {
 /**
  * @summary Create a user (admin only)
  */
-export const createUser = async (userInput: UserInput, options?: RequestInit): Promise<User> => {
+export const createUser = async (userInput: UserInput, options?: RequestInit): Promise<UserCreated> => {
 
-  return customFetch<User>(getCreateUserUrl(),
+  return customFetch<UserCreated>(getCreateUserUrl(),
   {
     ...options,
     method: 'POST',

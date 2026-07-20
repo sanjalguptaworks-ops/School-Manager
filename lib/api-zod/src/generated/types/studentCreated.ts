@@ -12,4 +12,6 @@ import type { Student } from './student';
  */
 export type StudentCreated = Student & {
   tempPassword: string;
+  /** Whether the welcome email with these credentials was successfully sent. */
+  emailSent?: boolean;
 };

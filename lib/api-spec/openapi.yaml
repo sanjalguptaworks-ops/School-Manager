@@ -94,11 +94,11 @@ paths:
               $ref: "#/components/schemas/UserInput"
       responses:
         "201":
-          description: Created
+          description: Created — includes whether the welcome email was sent
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: "#/components/schemas/UserCreated"
 
   /users/{id}:
     patch:
@@ -919,6 +919,15 @@ components:
           type: string
           enum: [admin, teacher, student, parent]
 
+    UserCreated:
+      description: A newly created user, plus whether the welcome email was successfully sent.
+      allOf:
+        - $ref: "#/components/schemas/User"
+        - type: object
+          properties:
+            emailSent:
+              type: boolean
+
     # ── Class ─────────────────────────────────────────────────────────────
     Class:
       type: object
@@ -1024,6 +1033,9 @@ components:
           properties:
             tempPassword:
               type: string
+            emailSent:
+              type: boolean
+              description: Whether the welcome email with these credentials was successfully sent.
 
     # ── Teacher ───────────────────────────────────────────────────────────
     Teacher:
@@ -1072,6 +1084,9 @@ components:
           properties:
             tempPassword:
               type: string
+            emailSent:
+              type: boolean
+              description: Whether the welcome email with these credentials was successfully sent.
 
     # ── Attendance ────────────────────────────────────────────────────────
     AttendanceRecord:

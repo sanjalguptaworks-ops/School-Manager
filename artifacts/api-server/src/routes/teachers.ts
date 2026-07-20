@@ -3,6 +3,7 @@ import { db, teachersTable, usersTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
+import { sendWelcomeEmail } from "../lib/mailer";
 
 const router = Router();
 
@@ -74,8 +75,16 @@ router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<v
         .insert(teachersTable)
         .values({ userId: user.id, subjects })
         .returning();
+      let emailSent = false;
+      try {
+        await sendWelcomeEmail(user.email, user.name, tempPassword);
+        emailSent = true;
+      } catch (mailErr) {
+        req.log.error(mailErr, "Failed to send teacher welcome email");
+      }
+
       const full = await getTeacherWithUser(teacher.id, schoolId);
-      res.status(201).json({ ...full, tempPassword });
+      res.status(201).json({ ...full, tempPassword, emailSent });
     } catch (err) {
       req.log.error(err);
       res.status(500).json({ error: "Internal server error" });

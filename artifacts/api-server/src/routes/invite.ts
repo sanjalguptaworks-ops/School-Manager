@@ -8,6 +8,7 @@ import { db, usersTable, studentsTable, teachersTable, parentStudentsTable } fro
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
+import { sendWelcomeEmail } from "../lib/mailer";
 
 const router = Router();
 
@@ -97,12 +98,21 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
       await db.insert(parentStudentsTable).values(links).onConflictDoNothing();
     }
 
+    let emailSent = false;
+    try {
+      await sendWelcomeEmail(dbUser.email, dbUser.name, tempPassword);
+      emailSent = true;
+    } catch (mailErr) {
+      req.log.error(mailErr, "Failed to send invite welcome email");
+    }
+
     const { passwordHash: _omit, ...safeUser } = dbUser;
     res.status(201).json({
       user: safeUser,
       tempPassword,
       teacherId,
       studentId,
+      emailSent,
     });
   } catch (err) {
     req.log.error(err);

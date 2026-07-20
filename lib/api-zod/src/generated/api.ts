@@ -70,7 +70,9 @@ export const CreateUserResponse = zod.object({
   "avatarUrl": zod.string().nullish(),
   "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
   "createdAt": zod.coerce.date()
-})
+}).and(zod.object({
+  "emailSent": zod.boolean().optional()
+})).describe('A newly created user, plus whether the welcome email was successfully sent.')
 
 
 /**
@@ -267,7 +269,8 @@ export const CreateStudentResponse = zod.object({
   "studentCount": zod.number().optional()
 }).optional()
 }).and(zod.object({
-  "tempPassword": zod.string()
+  "tempPassword": zod.string(),
+  "emailSent": zod.boolean().optional().describe('Whether the welcome email with these credentials was successfully sent.')
 })).describe('A newly created student, plus the one-time temporary password for their new account.')
 
 
@@ -401,7 +404,8 @@ export const CreateTeacherResponse = zod.object({
   "createdAt": zod.coerce.date()
 }).optional()
 }).and(zod.object({
-  "tempPassword": zod.string()
+  "tempPassword": zod.string(),
+  "emailSent": zod.boolean().optional().describe('Whether the welcome email with these credentials was successfully sent.')
 })).describe('A newly created teacher, plus the one-time temporary password for their new account.')
 
 

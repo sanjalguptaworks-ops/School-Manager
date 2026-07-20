@@ -4,7 +4,7 @@ import { eq, and, gt } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { signEmailChangeToken, verifyEmailChangeToken } from "../lib/jwt";
-import { sendEmailChangeConfirmation } from "../lib/mailer";
+import { sendEmailChangeConfirmation, sendWelcomeEmail } from "../lib/mailer";
 import crypto from "crypto";
 
 const router = Router();
@@ -198,8 +198,17 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
         .insert(usersTable)
         .values({ name, email: String(email).toLowerCase(), role, passwordHash, schoolId: me.schoolId })
         .returning();
+
+      let emailSent = false;
+      try {
+        await sendWelcomeEmail(user.email, user.name, password);
+        emailSent = true;
+      } catch (mailErr) {
+        req.log.error(mailErr, "Failed to send welcome email");
+      }
+
       const { passwordHash: _omit, ...safeUser } = user;
-      res.status(201).json(safeUser);
+      res.status(201).json({ ...safeUser, emailSent });
     } catch (err) {
       req.log.error(err);
       res.status(500).json({ error: "Internal server error" });

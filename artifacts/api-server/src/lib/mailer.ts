@@ -3,6 +3,45 @@
  * Render's free tier blocks outbound SMTP ports, so we use a plain
  * HTTPS request instead — this always works regardless of hosting.
  */
+
+/**
+ * Sent right after an admin creates a new account (student, teacher, or
+ * any other role), with the login email and one-time temporary password.
+ * Callers should catch failures and continue — the admin also sees the
+ * credentials on-screen as a fallback, so a failed email should never
+ * block account creation.
+ */
+export async function sendWelcomeEmail(to: string, name: string, tempPassword: string): Promise<void> {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";
+  const frontendUrl = (process.env["FRONTEND_URL"] || "").replace(/\/$/, "");
+  const loginUrl = frontendUrl ? `${frontendUrl}/login` : "";
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY environment variable is required to send email.");
+  }
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `EduCore <${from}>`,
+      to: [to],
+      subject: "Your EduCore account is ready",
+      text: `Hi ${name},\n\nAn EduCore account has been created for you.\n\nLogin email: ${to}\nTemporary password: ${tempPassword}\n\n${loginUrl ? `Sign in here: ${loginUrl}\n\n` : ""}Please change your password after signing in, from your Profile page.\n\n— EduCore`,
+      html: `<p>Hi ${name},</p><p>An EduCore account has been created for you.</p><ul><li><b>Login email:</b> ${to}</li><li><b>Temporary password:</b> ${tempPassword}</li></ul>${loginUrl ? `<p><a href="${loginUrl}">Sign in here</a></p>` : ""}<p>Please change your password after signing in, from your Profile page.</p><p style="color:#888;font-size:12px">Sent via EduCore</p>`,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend API error (${res.status}): ${body}`);
+  }
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";

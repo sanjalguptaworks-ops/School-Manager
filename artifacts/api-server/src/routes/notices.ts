@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, noticesTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { notifyNewNotice } from "../lib/notify";
 
 const router = Router();
 
@@ -55,6 +56,10 @@ router.post("/notices", requireAuth, async (req, res) => {
       .insert(noticesTable)
       .values({ title, body, targetRole, classId: classId || null, createdBy })
       .returning();
+
+    // Fire-and-forget: don't make the person wait for emails to send.
+    notifyNewNotice({ title: notice.title, body: notice.body, targetRole: notice.targetRole, classId: notice.classId });
+
     return res.status(201).json({ ...notice, createdByUser: null });
   } catch (err) {
     req.log.error(err);

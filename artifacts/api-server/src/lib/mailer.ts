@@ -33,9 +33,55 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 }
 
 /**
- * Sends a confirmation link to a user's NEW email address when they request
- * an email change. The email only actually changes once this link is clicked.
+ * Sends one email to many recipients individually (Resend needs a separate
+ * call per unique "to" for us to track failures per-address). Used for
+ * notices/exam/fee notifications, where the audience can be a whole class
+ * or the whole school.
+ *
+ * Resend's free plan caps out at 100 emails/day on one domain. If a batch
+ * would exceed a safe daily budget, we send as many as we can and log the
+ * rest as skipped rather than failing the whole request — the feature this
+ * powers (creating a notice/exam/fee) should never be blocked by email limits.
  */
+export async function sendBulkNotificationEmail(
+  recipients: string[],
+  subject: string,
+  text: string,
+  html: string,
+): Promise<{ sent: number; skipped: number }> {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";
+  const dailyBudget = parseInt(process.env["NOTIFY_DAILY_EMAIL_BUDGET"] || "90", 10);
+
+  const unique = Array.from(new Set(recipients.filter(Boolean)));
+  if (!apiKey || unique.length === 0) {
+    return { sent: 0, skipped: unique.length };
+  }
+
+  const toSend = unique.slice(0, dailyBudget);
+  const skipped = unique.length - toSend.length;
+
+  const CONCURRENCY = 5;
+  let sent = 0;
+  for (let i = 0; i < toSend.length; i += CONCURRENCY) {
+    const batch = toSend.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(
+      batch.map((to) =>
+        fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ from: `EduCore <${from}>`, to: [to], subject, text, html }),
+        }),
+      ),
+    );
+    sent += results.filter((r) => r.status === "fulfilled" && (r.value as Response).ok).length;
+  }
+
+  return { sent, skipped };
+}
 export async function sendEmailChangeConfirmation(to: string, confirmUrl: string): Promise<void> {
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";

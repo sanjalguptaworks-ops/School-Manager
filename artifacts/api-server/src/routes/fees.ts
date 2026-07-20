@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, feeStructuresTable, feePaymentsTable, classesTable, studentsTable, usersTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { notifyFeeDue } from "../lib/notify";
 
 const router = Router();
 
@@ -136,6 +137,8 @@ router.post("/fee-structures/:id/generate-payments", requireAuth, async (req, re
 
     if (toInsert.length > 0) {
       await db.insert(feePaymentsTable).values(toInsert);
+      // Fire-and-forget: only notify when this actually assigned new dues.
+      notifyFeeDue({ term: fs.term, amount: fs.amount, dueDate: fs.dueDate, classId: fs.classId });
     }
 
     res.json({ created: toInsert.length, skipped: existingIds.size });

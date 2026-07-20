@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, examsTable, classesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import { notifyNewExam } from "../lib/notify";
 
 const router = Router();
 
@@ -69,6 +70,10 @@ router.post("/exams", requireAuth, async (req, res) => {
       .insert(examsTable)
       .values({ name, classId, subject, date, maxMarks })
       .returning();
+
+    // Fire-and-forget: don't make the person wait for emails to send.
+    notifyNewExam({ name: exam.name, subject: exam.subject, date: exam.date, maxMarks: exam.maxMarks, classId: exam.classId });
+
     const full = await getExamWithClass(exam.id);
     return res.status(201).json(full);
   } catch (err) {

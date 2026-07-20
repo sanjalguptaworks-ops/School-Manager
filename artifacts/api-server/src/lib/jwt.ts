@@ -1,9 +1,14 @@
 import jwt from "jsonwebtoken";
 
-const SECRET = process.env["SESSION_SECRET"];
-if (!SECRET) {
-  throw new Error("SESSION_SECRET environment variable is required but was not provided.");
+function requireSecret(): string {
+  const secret = process.env["SESSION_SECRET"];
+  if (!secret) {
+    throw new Error("SESSION_SECRET environment variable is required but was not provided.");
+  }
+  return secret;
 }
+
+const SECRET = requireSecret();
 
 export interface SessionPayload {
   userId: number;

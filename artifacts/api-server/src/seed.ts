@@ -3,7 +3,7 @@
  * Safe to run multiple times (skips if data exists).
  * All seeded accounts share the password printed at the end.
  */
-import { db, usersTable, classesTable, studentsTable, teachersTable, noticesTable, examsTable, marksTable, feeStructuresTable, feePaymentsTable } from "@workspace/db";
+import { db, schoolsTable, usersTable, classesTable, studentsTable, teachersTable, noticesTable, examsTable, marksTable, feeStructuresTable, feePaymentsTable } from "@workspace/db";
 import { hashPassword } from "./lib/password";
 
 const SEED_PASSWORD = "Password123!";
@@ -18,10 +18,15 @@ async function seed() {
     process.exit(0);
   }
 
+  const [school] = await db.insert(schoolsTable).values({
+    name: "EduCore Demo School",
+    status: "approved",
+  }).returning();
+
   const [cls10A, cls10B, cls9A] = await db.insert(classesTable).values([
-    { name: "Class 10", section: "A" },
-    { name: "Class 10", section: "B" },
-    { name: "Class 9", section: "A" },
+    { name: "Class 10", section: "A", schoolId: school.id },
+    { name: "Class 10", section: "B", schoolId: school.id },
+    { name: "Class 9", section: "A", schoolId: school.id },
   ]).returning();
 
   const passwordHash = await hashPassword(SEED_PASSWORD);
@@ -32,13 +37,14 @@ async function seed() {
     email: "admin@educore.school",
     role: "admin",
     passwordHash,
+    schoolId: school.id,
   }).returning();
 
   // Teacher users
   const [t1User, t2User, t3User] = await db.insert(usersTable).values([
-    { name: "Rajesh Kumar", email: "rajesh@educore.school", role: "teacher", passwordHash },
-    { name: "Priya Mehta", email: "priya@educore.school", role: "teacher", passwordHash },
-    { name: "Suresh Patel", email: "suresh@educore.school", role: "teacher", passwordHash },
+    { name: "Rajesh Kumar", email: "rajesh@educore.school", role: "teacher", passwordHash, schoolId: school.id },
+    { name: "Priya Mehta", email: "priya@educore.school", role: "teacher", passwordHash, schoolId: school.id },
+    { name: "Suresh Patel", email: "suresh@educore.school", role: "teacher", passwordHash, schoolId: school.id },
   ]).returning();
 
   // Teachers
@@ -50,12 +56,12 @@ async function seed() {
 
   // Student users
   const studentUserData = [
-    { name: "Amit Verma", email: "amit@student.educore.school", role: "student" as const, passwordHash },
-    { name: "Sneha Rao", email: "sneha@student.educore.school", role: "student" as const, passwordHash },
-    { name: "Ravi Gupta", email: "ravi@student.educore.school", role: "student" as const, passwordHash },
-    { name: "Kavya Nair", email: "kavya@student.educore.school", role: "student" as const, passwordHash },
-    { name: "Arjun Singh", email: "arjun@student.educore.school", role: "student" as const, passwordHash },
-    { name: "Pooja Reddy", email: "pooja@student.educore.school", role: "student" as const, passwordHash },
+    { name: "Amit Verma", email: "amit@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
+    { name: "Sneha Rao", email: "sneha@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
+    { name: "Ravi Gupta", email: "ravi@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
+    { name: "Kavya Nair", email: "kavya@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
+    { name: "Arjun Singh", email: "arjun@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
+    { name: "Pooja Reddy", email: "pooja@student.educore.school", role: "student" as const, passwordHash, schoolId: school.id },
   ];
   const studentUsers = await db.insert(usersTable).values(studentUserData).returning();
 
@@ -71,11 +77,11 @@ async function seed() {
 
   // Notices
   await db.insert(noticesTable).values([
-    { title: "Annual Sports Day", body: "Annual Sports Day will be held on August 10th. All students must participate. Venue: School Ground. Time: 9:00 AM onwards.", targetRole: "all", createdBy: adminUser.id },
-    { title: "Parent-Teacher Meeting", body: "PTM scheduled for July 25th from 10 AM to 1 PM. All parents are requested to attend without fail to discuss academic progress.", targetRole: "parents", createdBy: adminUser.id },
-    { title: "Math Olympiad Registration", body: "Students interested in participating in the State Math Olympiad must submit their forms to the office by July 20th.", targetRole: "students", classId: cls10A.id, createdBy: t1User.id },
-    { title: "Fee Payment Reminder", body: "Term 1 fees are due by July 31st. Students with pending fees will not receive report cards. Contact the admin office for payment.", targetRole: "parents", createdBy: adminUser.id },
-    { title: "Library Books Return", body: "All library books must be returned by July 22nd for stock-taking. Students with overdue books will be fined Rs 5 per day.", targetRole: "students", createdBy: t2User.id },
+    { title: "Annual Sports Day", body: "Annual Sports Day will be held on August 10th. All students must participate. Venue: School Ground. Time: 9:00 AM onwards.", targetRole: "all", schoolId: school.id, createdBy: adminUser.id },
+    { title: "Parent-Teacher Meeting", body: "PTM scheduled for July 25th from 10 AM to 1 PM. All parents are requested to attend without fail to discuss academic progress.", targetRole: "parents", schoolId: school.id, createdBy: adminUser.id },
+    { title: "Math Olympiad Registration", body: "Students interested in participating in the State Math Olympiad must submit their forms to the office by July 20th.", targetRole: "students", classId: cls10A.id, schoolId: school.id, createdBy: t1User.id },
+    { title: "Fee Payment Reminder", body: "Term 1 fees are due by July 31st. Students with pending fees will not receive report cards. Contact the admin office for payment.", targetRole: "parents", schoolId: school.id, createdBy: adminUser.id },
+    { title: "Library Books Return", body: "All library books must be returned by July 22nd for stock-taking. Students with overdue books will be fined Rs 5 per day.", targetRole: "students", schoolId: school.id, createdBy: t2User.id },
   ]);
 
   // Exams

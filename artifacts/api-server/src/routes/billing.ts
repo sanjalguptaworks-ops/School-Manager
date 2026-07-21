@@ -7,6 +7,7 @@ import {
   usersTable,
   pricingTiersTable,
   billingPaymentsTable,
+  feePaymentsTable,
 } from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
@@ -400,25 +401,40 @@ router.post("/billing/webhook", async (req, res): Promise<void> => {
         .from(billingPaymentsTable)
         .where(eq(billingPaymentsTable.razorpayPaymentLinkId, linkId))
         .limit(1);
-      if (!payment) {
+      if (payment) {
+        await db
+          .update(billingPaymentsTable)
+          .set({ status: "paid", paidAt: new Date() })
+          .where(eq(billingPaymentsTable.id, payment.id));
+
+        const [school] = await db.select().from(schoolsTable).where(eq(schoolsTable.id, payment.schoolId)).limit(1);
+        if (school) {
+          const updates: Record<string, any> = { paidUntil: payment.periodEnd, billingMode: "manual" };
+          // Never lift a suspension the creator set by hand.
+          if (school.suspensionReason !== "manual") {
+            updates.suspendedFrom = null;
+            updates.suspendedUntil = null;
+            updates.suspensionReason = null;
+          }
+          await db.update(schoolsTable).set(updates).where(eq(schoolsTable.id, school.id));
+        }
+
         res.status(200).json({ ok: true });
         return;
       }
-      await db
-        .update(billingPaymentsTable)
-        .set({ status: "paid", paidAt: new Date() })
-        .where(eq(billingPaymentsTable.id, payment.id));
 
-      const [school] = await db.select().from(schoolsTable).where(eq(schoolsTable.id, payment.schoolId)).limit(1);
-      if (school) {
-        const updates: Record<string, any> = { paidUntil: payment.periodEnd, billingMode: "manual" };
-        // Never lift a suspension the creator set by hand.
-        if (school.suspensionReason !== "manual") {
-          updates.suspendedFrom = null;
-          updates.suspendedUntil = null;
-          updates.suspensionReason = null;
-        }
-        await db.update(schoolsTable).set(updates).where(eq(schoolsTable.id, school.id));
+      // Not a school-subscription payment link -- check whether it's a
+      // student fee payment link instead (see routes/fees.ts).
+      const [feePayment] = await db
+        .select({ id: feePaymentsTable.id })
+        .from(feePaymentsTable)
+        .where(eq(feePaymentsTable.razorpayPaymentLinkId, linkId))
+        .limit(1);
+      if (feePayment) {
+        await db
+          .update(feePaymentsTable)
+          .set({ status: "paid", paidOn: toDateString(new Date()) })
+          .where(eq(feePaymentsTable.id, feePayment.id));
       }
 
       res.status(200).json({ ok: true });

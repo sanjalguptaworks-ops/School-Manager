@@ -34,6 +34,11 @@ export const feePaymentsTable = pgTable(
       .notNull()
       .default("pending"),
     paidOn: date("paid_on", { mode: "string" }),
+    // Set when a parent/student generates a Razorpay Payment Link for this
+    // fee (see POST /fee-payments/:id/pay). Reused on repeat clicks rather
+    // than creating a new link every time, until it's actually paid.
+    razorpayPaymentLinkId: text("razorpay_payment_link_id"),
+    razorpayPaymentLinkUrl: text("razorpay_payment_link_url"),
   },
   (t) => [unique().on(t.studentId, t.feeStructureId)],
 );

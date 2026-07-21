@@ -4,6 +4,7 @@ import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { notifyFeeDue } from "../lib/notify";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
+import { createPaymentLink } from "../lib/razorpay";
 
 const router = Router();
 
@@ -96,6 +97,7 @@ router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
         feeStructureId: feePaymentsTable.feeStructureId,
         status: feePaymentsTable.status,
         paidOn: feePaymentsTable.paidOn,
+        razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
         student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'avatarUrl', ${usersTable.avatarUrl}))`,
         feeStructure: sql<any>`json_build_object('id', ${feeStructuresTable.id}, 'amount', ${feeStructuresTable.amount}, 'term', ${feeStructuresTable.term}, 'dueDate', ${feeStructuresTable.dueDate})`,
       })
@@ -205,6 +207,86 @@ router.post("/fee-payments/:id/mark-paid", requireAuth, requireSchool, async (re
       res.status(500).json({ error: "Internal server error" });
     }
   });
+});
+
+// POST /fee-payments/:id/pay — student (their own), parent (a linked
+// child's), or admin. Generates a real Razorpay Payment Link for this fee
+// and returns its URL for the browser to redirect to. Reuses an
+// already-generated link on repeat calls instead of creating a new one each
+// time, until the fee status flips to "paid" (see the webhook handler in
+// routes/billing.ts).
+router.post("/fee-payments/:id/pay", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  try {
+    const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+    const id = parseInt(req.params["id"] as string);
+
+    const [payment] = await db
+      .select({
+        id: feePaymentsTable.id,
+        studentId: feePaymentsTable.studentId,
+        status: feePaymentsTable.status,
+        razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
+        amount: feeStructuresTable.amount,
+        term: feeStructuresTable.term,
+        studentName: usersTable.name,
+        studentEmail: usersTable.email,
+      })
+      .from(feePaymentsTable)
+      .innerJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
+      .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
+      .innerJoin(studentsTable, eq(feePaymentsTable.studentId, studentsTable.id))
+      .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))
+      .where(and(eq(feePaymentsTable.id, id), eq(classesTable.schoolId, schoolId)))
+      .limit(1);
+
+    if (!payment) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (!canAccessStudent(scope, payment.studentId)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    if (payment.status === "paid") {
+      res.status(400).json({ error: "This fee is already paid" });
+      return;
+    }
+
+    if (payment.razorpayPaymentLinkUrl) {
+      res.json({ paymentUrl: payment.razorpayPaymentLinkUrl });
+      return;
+    }
+
+    if (!payment.studentEmail) {
+      res.status(400).json({ error: "This student has no email on file to bill" });
+      return;
+    }
+
+    const expireBy = new Date();
+    expireBy.setDate(expireBy.getDate() + 30);
+
+    const link = await createPaymentLink({
+      amountRupees: parseFloat(payment.amount as unknown as string),
+      description: `${payment.term} fee payment`,
+      customerName: payment.studentName || "Student",
+      customerEmail: payment.studentEmail,
+      expireBy,
+    });
+
+    await db
+      .update(feePaymentsTable)
+      .set({ razorpayPaymentLinkId: link.id, razorpayPaymentLinkUrl: link.short_url })
+      .where(eq(feePaymentsTable.id, id));
+
+    res.json({ paymentUrl: link.short_url });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

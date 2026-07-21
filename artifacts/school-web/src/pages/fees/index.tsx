@@ -34,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { Check, Plus, Zap } from "lucide-react";
+import { Check, Plus, Zap, CreditCard } from "lucide-react";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -45,6 +45,16 @@ async function generatePayments(feeStructureId: number) {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ created: number; skipped: number }>;
+}
+
+async function payFee(feePaymentId: number): Promise<{ paymentUrl: string }> {
+  const res = await fetch(`${BASE_URL}/api/fee-payments/${feePaymentId}/pay`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Could not start payment");
+  return data;
 }
 
 export default function FeesPage() {
@@ -392,6 +402,20 @@ function AdminFeeTable() {
 
 function StudentFeeTable() {
   const { data: payments, isLoading } = useListFeePayments();
+  const { toast } = useToast();
+  const [payingId, setPayingId] = useState<number | null>(null);
+
+  const handlePay = async (id: number) => {
+    setPayingId(id);
+    try {
+      const { paymentUrl } = await payFee(id);
+      window.location.href = paymentUrl;
+    } catch (err: any) {
+      toast({ title: err?.message || "Could not start payment", variant: "destructive" });
+    } finally {
+      setPayingId(null);
+    }
+  };
 
   return (
     <Table>
@@ -433,9 +457,10 @@ function StudentFeeTable() {
                     Paid on {payment.paidOn ? format(new Date(payment.paidOn), "MMM d") : ""}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
-                    Pending Payment
-                  </Badge>
+                  <Button size="sm" onClick={() => handlePay(payment.id)} disabled={payingId === payment.id}>
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    {payingId === payment.id ? "Starting..." : "Pay Now"}
+                  </Button>
                 )}
               </TableCell>
             </TableRow>

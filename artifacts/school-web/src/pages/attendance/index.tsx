@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, Loader2 } from "lucide-react";
+import { Check, X, Clock, Loader2, Download } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toCsv, downloadCsv } from "@/lib/csv";
 
 export default function AttendancePage() {
   const [classId, setClassId] = useState<string>("");
@@ -116,6 +117,19 @@ export default function AttendancePage() {
             </div>
             {students && students.length > 0 && (
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const csv = toCsv(
+                      ["rollNo", "name", "date", "status"],
+                      students.map((s) => [s.rollNo, s.user?.name, date, getStatus(s.id) || ""]),
+                    );
+                    downloadCsv(`attendance-${date}.csv`, csv);
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-1" /> Export CSV
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => markAll("present")} className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200">
                   <Check className="w-4 h-4 mr-1" /> Mark All Present
                 </Button>

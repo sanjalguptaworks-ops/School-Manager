@@ -49,11 +49,27 @@ export default function StudentsList() {
   const { data: students, isLoading } = useListStudents(classFilter !== "all" ? { classId: Number(classFilter) } : {});
   const { data: classes } = useListClasses();
   
-  const filteredStudents = students?.filter(s => 
-    search === "" || 
-    s.user?.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredStudents = students?.filter(s =>
+    search === "" ||
+    s.user?.name.toLowerCase().includes(search.toLowerCase()) ||
     s.rollNo.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleExport = () => {
+    const csv = toCsv(
+      ["rollNo", "name", "email", "class", "dob", "guardianName", "guardianContact"],
+      (filteredStudents || []).map((s) => [
+        s.rollNo,
+        s.user?.name,
+        s.user?.email,
+        s.class ? `${s.class.name} ${s.class.section}` : "",
+        s.dob,
+        s.guardianName,
+        s.guardianContact,
+      ]),
+    );
+    downloadCsv("students.csv", csv);
+  };
 
   return (
     <div className="space-y-6">
@@ -63,6 +79,9 @@ export default function StudentsList() {
           <p className="text-muted-foreground mt-1">Manage and view student records</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" className="shadow-sm" onClick={handleExport} disabled={!filteredStudents?.length}>
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
           <BulkImportStudentsDialog classes={classes || []} />
           <AddStudentDialog classes={classes || []} />
         </div>

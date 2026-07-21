@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, Loader2, Save } from "lucide-react";
+import { ChevronLeft, Loader2, Save, Download } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toCsv, downloadCsv } from "@/lib/csv";
 
 export default function ExamDetail() {
   const { id } = useParams<{ id: string }>();
@@ -98,10 +99,26 @@ export default function ExamDetail() {
             <CardTitle className="text-lg">Marks Entry</CardTitle>
             <CardDescription>Max Marks: {exam.maxMarks}</CardDescription>
           </div>
-          <Button onClick={handleSave} disabled={enterMarks.isPending} size="sm">
-            {enterMarks.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Marks
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!students?.length}
+              onClick={() => {
+                const csv = toCsv(
+                  ["rollNo", "name", "marksObtained", "maxMarks"],
+                  (students || []).map((s) => [s.rollNo, s.user?.name, localMarks[s.id] || "", exam.maxMarks]),
+                );
+                downloadCsv(`${exam.name}-${exam.subject}-marks.csv`, csv);
+              }}
+            >
+              <Download className="w-4 h-4 mr-2" /> Export CSV
+            </Button>
+            <Button onClick={handleSave} disabled={enterMarks.isPending} size="sm">
+              {enterMarks.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Marks
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {loadingStudents || loadingMarks ? (

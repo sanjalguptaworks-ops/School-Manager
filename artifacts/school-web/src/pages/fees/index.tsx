@@ -34,7 +34,8 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { Check, Plus, Zap, CreditCard } from "lucide-react";
+import { Check, Plus, Zap, CreditCard, Download } from "lucide-react";
+import { toCsv, downloadCsv } from "@/lib/csv";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -320,12 +321,33 @@ function AdminFeeTable() {
     );
   };
 
+  const handleExport = () => {
+    const csv = toCsv(
+      ["studentName", "rollNo", "term", "amount", "dueDate", "status", "paidOn"],
+      (payments || []).map((p) => [
+        p.student?.user?.name,
+        p.student?.rollNo,
+        p.feeStructure?.term,
+        p.feeStructure?.amount,
+        p.feeStructure?.dueDate,
+        p.status,
+        p.paidOn,
+      ]),
+    );
+    downloadCsv("fee-payments.csv", csv);
+  };
+
   return (
     <>
-      <div className="p-4 border-b flex gap-2 bg-muted/30">
-        <Button variant={filter === undefined ? "secondary" : "ghost"} size="sm" onClick={() => setFilter(undefined)}>All</Button>
-        <Button variant={filter === "pending" ? "secondary" : "ghost"} size="sm" onClick={() => setFilter("pending")}>Pending</Button>
-        <Button variant={filter === "paid" ? "secondary" : "ghost"} size="sm" onClick={() => setFilter("paid")}>Paid</Button>
+      <div className="p-4 border-b flex gap-2 justify-between items-center bg-muted/30">
+        <div className="flex gap-2">
+          <Button variant={filter === undefined ? "secondary" : "ghost"} size="sm" onClick={() => setFilter(undefined)}>All</Button>
+          <Button variant={filter === "pending" ? "secondary" : "ghost"} size="sm" onClick={() => setFilter("pending")}>Pending</Button>
+          <Button variant={filter === "paid" ? "secondary" : "ghost"} size="sm" onClick={() => setFilter("paid")}>Paid</Button>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={!payments?.length}>
+          <Download className="w-4 h-4 mr-2" /> Export CSV
+        </Button>
       </div>
       <Table>
         <TableHeader>

@@ -5,7 +5,7 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router = Router();
 
-const DEFAULT_TRIAL_DAYS = 14;
+const DEFAULT_TRIAL_DAYS = 30;
 
 function addDays(date: Date, days: number): Date {
   const result = new Date(date);

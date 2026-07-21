@@ -409,7 +409,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Trial days</Label>
-                <Input type="number" min={0} value={trialDays} onChange={(e) => setTrialDays(e.target.value)} placeholder="e.g. 14" />
+                <Input type="number" min={0} value={trialDays} onChange={(e) => setTrialDays(e.target.value)} placeholder="e.g. 30" />
               </div>
             </div>
           </div>

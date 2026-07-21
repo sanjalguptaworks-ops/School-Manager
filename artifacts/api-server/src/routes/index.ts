@@ -17,6 +17,7 @@ import schoolsRouter from "./schools";
 import billingRouter from "./billing";
 import certificatesRouter from "./certificates";
 import eventsRouter from "./events";
+import homeworkRouter from "./homework";
 
 const router: IRouter = Router();
 
@@ -38,5 +39,6 @@ router.use(schoolsRouter);
 router.use(billingRouter);
 router.use(certificatesRouter);
 router.use(eventsRouter);
+router.use(homeworkRouter);
 
 export default router;

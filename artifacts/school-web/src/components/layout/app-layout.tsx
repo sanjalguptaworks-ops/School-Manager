@@ -17,7 +17,8 @@ import {
   X,
   ShieldCheck,
   Award,
-  CalendarDays
+  CalendarDays,
+  NotebookPen
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { Button } from "../ui/button";
@@ -34,6 +35,7 @@ const navConfig = {
     { href: "/classes", icon: BookOpen, label: "Classes" },
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
+    { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
@@ -45,6 +47,7 @@ const navConfig = {
     { href: "/students", icon: Users, label: "Students" },
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
+    { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/certificates", icon: Award, label: "Certificates" },
@@ -53,6 +56,7 @@ const navConfig = {
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/my-attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
+    { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
@@ -61,6 +65,7 @@ const navConfig = {
   ],
   parent: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },

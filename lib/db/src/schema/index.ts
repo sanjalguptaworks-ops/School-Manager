@@ -17,3 +17,4 @@ export * from "./parent-students";
 export * from "./certificates";
 export * from "./teacher-classes";
 export * from "./events";
+export * from "./homework";

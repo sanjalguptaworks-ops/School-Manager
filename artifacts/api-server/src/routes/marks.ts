@@ -20,7 +20,7 @@ router.get("/marks", requireAuth, requireSchool, async (req, res) => {
         examId: marksTable.examId,
         studentId: marksTable.studentId,
         marksObtained: marksTable.marksObtained,
-        student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}))`,
+        student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'avatarUrl', ${usersTable.avatarUrl}))`,
       })
       .from(marksTable)
       .innerJoin(examsTable, eq(marksTable.examId, examsTable.id))
@@ -106,7 +106,7 @@ router.get("/marks/report/:studentId", requireAuth, requireSchool, async (req, r
         dob: studentsTable.dob,
         guardianName: studentsTable.guardianName,
         guardianContact: studentsTable.guardianContact,
-        user: sql<any>`json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'role', ${usersTable.role})`,
+        user: sql<any>`json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'role', ${usersTable.role}, 'avatarUrl', ${usersTable.avatarUrl})`,
       })
       .from(studentsTable)
       .leftJoin(usersTable, eq(studentsTable.userId, usersTable.id))

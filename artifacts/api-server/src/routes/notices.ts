@@ -25,6 +25,8 @@ router.get("/notices", requireAuth, requireSchool, async (req, res) => {
           id: usersTable.id,
           name: usersTable.name,
           email: usersTable.email,
+          phone: usersTable.phone,
+          avatarUrl: usersTable.avatarUrl,
           role: usersTable.role,
           createdAt: usersTable.createdAt,
         },

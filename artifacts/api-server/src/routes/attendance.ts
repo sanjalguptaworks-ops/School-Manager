@@ -22,7 +22,7 @@ async function buildAttendanceQuery(filters: any[] = []) {
         dob: studentsTable.dob,
         guardianName: studentsTable.guardianName,
         guardianContact: studentsTable.guardianContact,
-        user: sql<any>`json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'role', ${usersTable.role})`,
+        user: sql<any>`json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'role', ${usersTable.role}, 'avatarUrl', ${usersTable.avatarUrl})`,
       },
     })
     .from(attendanceTable)

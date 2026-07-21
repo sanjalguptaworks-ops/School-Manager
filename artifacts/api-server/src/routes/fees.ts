@@ -84,7 +84,7 @@ router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
         feeStructureId: feePaymentsTable.feeStructureId,
         status: feePaymentsTable.status,
         paidOn: feePaymentsTable.paidOn,
-        student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}))`,
+        student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'avatarUrl', ${usersTable.avatarUrl}))`,
         feeStructure: sql<any>`json_build_object('id', ${feeStructuresTable.id}, 'amount', ${feeStructuresTable.amount}, 'term', ${feeStructuresTable.term}, 'dueDate', ${feeStructuresTable.dueDate})`,
       })
       .from(feePaymentsTable)

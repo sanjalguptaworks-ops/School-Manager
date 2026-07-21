@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { db, usersTable, schoolsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { verifySession } from "../lib/jwt";
-import { isSchoolSuspended } from "../lib/school-settings";
+import { isSchoolSuspended, isBillingLapsed } from "../lib/school-settings";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const token = req.cookies?.["session"];
@@ -54,6 +54,8 @@ export async function requireSchool(req: Request, res: Response, next: NextFunct
       schoolId: usersTable.schoolId,
       suspendedFrom: schoolsTable.suspendedFrom,
       suspendedUntil: schoolsTable.suspendedUntil,
+      billingMode: schoolsTable.billingMode,
+      paidUntil: schoolsTable.paidUntil,
     })
     .from(usersTable)
     .leftJoin(schoolsTable, eq(usersTable.schoolId, schoolsTable.id))
@@ -65,6 +67,10 @@ export async function requireSchool(req: Request, res: Response, next: NextFunct
   }
   if (isSchoolSuspended({ suspendedFrom: me.suspendedFrom, suspendedUntil: me.suspendedUntil })) {
     res.status(403).json({ error: "Your school's access has been suspended. Contact support." });
+    return;
+  }
+  if (isBillingLapsed({ billingMode: me.billingMode ?? "trial", paidUntil: me.paidUntil })) {
+    res.status(403).json({ error: "Your school's trial or billing period has ended. Contact support to renew." });
     return;
   }
   (req as any).schoolId = me.schoolId;

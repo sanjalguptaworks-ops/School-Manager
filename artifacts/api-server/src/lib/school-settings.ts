@@ -20,6 +20,24 @@ export function isSchoolSuspended(school: SuspensionWindow): boolean {
   return true;
 }
 
+export interface BillingWindow {
+  billingMode: "trial" | "manual" | "auto";
+  paidUntil: string | null;
+}
+
+/**
+ * True once a school's trial or last-paid period has lapsed without a new
+ * payment. Auto-pay schools are exempt -- their access is governed by the
+ * Razorpay subscription webhook instead (see routes/billing.ts), not this
+ * date field.
+ */
+export function isBillingLapsed(school: BillingWindow): boolean {
+  if (school.billingMode === "auto") return false;
+  if (!school.paidUntil) return false;
+  const today = new Date().toISOString().split("T")[0] as string;
+  return today > school.paidUntil;
+}
+
 /**
  * Whether the given school has opted in to sending email (welcome emails,
  * notice/exam/fee-due notifications). Defaults to true if the school row

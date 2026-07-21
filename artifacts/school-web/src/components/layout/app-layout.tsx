@@ -1,15 +1,16 @@
 import { ReactNode, useState } from "react";
 import { useAppAuth } from "@/lib/auth-context";
 import { useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Users, 
-  GraduationCap, 
-  BookOpen, 
-  CalendarCheck, 
-  FileText, 
-  Bell, 
-  CreditCard, 
+import {
+  LayoutDashboard,
+  Users,
+  GraduationCap,
+  BookOpen,
+  CalendarCheck,
+  FileText,
+  Bell,
+  CreditCard,
+  Wallet,
   UserCircle,
   LogOut,
   Menu,
@@ -33,6 +34,7 @@ const navConfig = {
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
+    { href: "/billing", icon: Wallet, label: "Billing" },
   ],
   teacher: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },

@@ -26,6 +26,7 @@ import NoticesPage from '@/pages/notices/index';
 import FeesPage from '@/pages/fees/index';
 import ProfilePage from '@/pages/profile/index';
 import UsersPage from '@/pages/users/index';
+import BillingPage from '@/pages/billing/index';
 import CreatorSchoolsPage from '@/pages/creator/schools';
 
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
@@ -140,6 +141,7 @@ function Router() {
       <Route path="/fees"><ProtectedRoute component={FeesPage} /></Route>
       <Route path="/profile"><ProtectedRoute component={ProfilePage} /></Route>
       <Route path="/users"><ProtectedRoute component={UsersPage} /></Route>
+      <Route path="/billing"><ProtectedRoute component={BillingPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

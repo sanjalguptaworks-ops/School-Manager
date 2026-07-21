@@ -42,6 +42,47 @@ export async function sendWelcomeEmail(to: string, name: string, tempPassword: s
   }
 }
 
+/**
+ * Sent when the creator generates a billing payment link for a school.
+ * Callers should catch failures -- the creator still sees the link on
+ * screen as a fallback, so a failed email shouldn't block link generation.
+ */
+export async function sendPaymentLinkEmail(params: {
+  to: string;
+  schoolName: string;
+  amountRupees: number;
+  interval: "monthly" | "annual";
+  paymentUrl: string;
+}): Promise<void> {
+  const apiKey = process.env["RESEND_API_KEY"];
+  const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY environment variable is required to send email.");
+  }
+
+  const periodLabel = params.interval === "annual" ? "year" : "month";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `EduCore <${from}>`,
+      to: [params.to],
+      subject: `Payment due for ${params.schoolName} — ₹${params.amountRupees}`,
+      text: `Hi,\n\nA payment of ₹${params.amountRupees} is due for ${params.schoolName} (this ${periodLabel}).\n\nPay here: ${params.paymentUrl}\n\nIf you have auto-pay set up, you can ignore this.\n\n— EduCore`,
+      html: `<p>Hi,</p><p>A payment of <b>₹${params.amountRupees}</b> is due for <b>${params.schoolName}</b> (this ${periodLabel}).</p><p><a href="${params.paymentUrl}">Pay here</a></p><p>If you have auto-pay set up, you can ignore this.</p><p style="color:#888;font-size:12px">Sent via EduCore</p>`,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend API error (${res.status}): ${body}`);
+  }
+}
+
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<void> {
   const apiKey = process.env["RESEND_API_KEY"];
   const from = process.env["MAIL_FROM"] || "no-reply@thinknbuild.in";

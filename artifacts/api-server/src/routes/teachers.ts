@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { sendWelcomeEmail } from "../lib/mailer";
+import { isEmailEnabledForSchool } from "../lib/school-settings";
 
 const router = Router();
 
@@ -80,11 +81,13 @@ router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<v
         .values({ userId: user.id, subjects })
         .returning();
       let emailSent = false;
-      try {
-        await sendWelcomeEmail(user.email, user.name, tempPassword);
-        emailSent = true;
-      } catch (mailErr) {
-        req.log.error(mailErr, "Failed to send teacher welcome email");
+      if (await isEmailEnabledForSchool(schoolId)) {
+        try {
+          await sendWelcomeEmail(user.email, user.name, tempPassword);
+          emailSent = true;
+        } catch (mailErr) {
+          req.log.error(mailErr, "Failed to send teacher welcome email");
+        }
       }
 
       const full = await getTeacherWithUser(teacher.id, schoolId);

@@ -1,6 +1,7 @@
 import { db, usersTable, studentsTable, parentStudentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { sendBulkNotificationEmail } from "./mailer";
+import { isEmailEnabledForSchool } from "./school-settings";
 
 const APP_NAME = "EduCore";
 
@@ -86,13 +87,17 @@ async function resolveNoticeRecipients(targetRole: string, classId: number | nul
 // These never throw: a failed/slow email send should never break the
 // notice/exam/fee action itself.
 
-export async function notifyNewNotice(notice: {
-  title: string;
-  body: string;
-  targetRole: string;
-  classId: number | null;
-}): Promise<void> {
+export async function notifyNewNotice(
+  notice: {
+    title: string;
+    body: string;
+    targetRole: string;
+    classId: number | null;
+  },
+  schoolId: number,
+): Promise<void> {
   try {
+    if (!(await isEmailEnabledForSchool(schoolId))) return;
     const recipients = await resolveNoticeRecipients(notice.targetRole, notice.classId);
     if (recipients.length === 0) return;
 
@@ -108,14 +113,18 @@ export async function notifyNewNotice(notice: {
   }
 }
 
-export async function notifyNewExam(exam: {
-  name: string;
-  subject: string;
-  date: string;
-  maxMarks: number;
-  classId: number;
-}): Promise<void> {
+export async function notifyNewExam(
+  exam: {
+    name: string;
+    subject: string;
+    date: string;
+    maxMarks: number;
+    classId: number;
+  },
+  schoolId: number,
+): Promise<void> {
   try {
+    if (!(await isEmailEnabledForSchool(schoolId))) return;
     const recipients = await getClassRecipients(exam.classId);
     if (recipients.length === 0) return;
 
@@ -133,13 +142,17 @@ export async function notifyNewExam(exam: {
   }
 }
 
-export async function notifyFeeDue(fs: {
-  term: string;
-  amount: string;
-  dueDate: string;
-  classId: number;
-}): Promise<void> {
+export async function notifyFeeDue(
+  fs: {
+    term: string;
+    amount: string;
+    dueDate: string;
+    classId: number;
+  },
+  schoolId: number,
+): Promise<void> {
   try {
+    if (!(await isEmailEnabledForSchool(schoolId))) return;
     const recipients = await getClassRecipients(fs.classId);
     if (recipients.length === 0) return;
 

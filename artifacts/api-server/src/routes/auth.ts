@@ -5,6 +5,7 @@ import { hashPassword, comparePassword } from "../lib/password";
 import { signSession, signResetToken, verifyResetToken } from "../lib/jwt";
 import { sendPasswordResetEmail } from "../lib/mailer";
 import { requireAuth } from "../middlewares/auth";
+import { isSchoolSuspended } from "../lib/school-settings";
 import crypto from "crypto";
 
 const router = Router();
@@ -52,6 +53,10 @@ router.post("/auth/login", async (req, res): Promise<void> => {
       }
       if (school.status === "rejected") {
         res.status(403).json({ error: "Your school's signup was not approved. Contact support for details." });
+        return;
+      }
+      if (isSchoolSuspended(school)) {
+        res.status(403).json({ error: "Your school's access has been suspended. Contact support." });
         return;
       }
     }

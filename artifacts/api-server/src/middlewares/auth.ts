@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
-import { db, usersTable } from "@workspace/db";
+import { db, usersTable, schoolsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { verifySession } from "../lib/jwt";
+import { isSchoolSuspended } from "../lib/school-settings";
 
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   const token = req.cookies?.["session"];
@@ -49,12 +50,21 @@ export async function requireSchool(req: Request, res: Response, next: NextFunct
     return;
   }
   const [me] = await db
-    .select({ schoolId: usersTable.schoolId })
+    .select({
+      schoolId: usersTable.schoolId,
+      suspendedFrom: schoolsTable.suspendedFrom,
+      suspendedUntil: schoolsTable.suspendedUntil,
+    })
     .from(usersTable)
+    .leftJoin(schoolsTable, eq(usersTable.schoolId, schoolsTable.id))
     .where(eq(usersTable.id, authUserId))
     .limit(1);
   if (!me?.schoolId) {
     res.status(403).json({ error: "Your account isn't linked to a school" });
+    return;
+  }
+  if (isSchoolSuspended({ suspendedFrom: me.suspendedFrom, suspendedUntil: me.suspendedUntil })) {
+    res.status(403).json({ error: "Your school's access has been suspended. Contact support." });
     return;
   }
   (req as any).schoolId = me.schoolId;

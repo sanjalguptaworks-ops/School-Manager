@@ -153,7 +153,7 @@ router.post("/fee-structures/:id/generate-payments", requireAuth, requireSchool,
       if (toInsert.length > 0) {
         await db.insert(feePaymentsTable).values(toInsert);
         // Fire-and-forget: only notify when this actually assigned new dues.
-        notifyFeeDue({ term: fs.term, amount: fs.amount, dueDate: fs.dueDate, classId: fs.classId });
+        notifyFeeDue({ term: fs.term, amount: fs.amount, dueDate: fs.dueDate, classId: fs.classId }, schoolId);
       }
 
       res.json({ created: toInsert.length, skipped: existingIds.size });

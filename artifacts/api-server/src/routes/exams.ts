@@ -84,7 +84,7 @@ router.post("/exams", requireAuth, requireSchool, async (req, res): Promise<void
         .returning();
 
       // Fire-and-forget: don't make the person wait for emails to send.
-      notifyNewExam({ name: exam.name, subject: exam.subject, date: exam.date, maxMarks: exam.maxMarks, classId: exam.classId });
+      notifyNewExam({ name: exam.name, subject: exam.subject, date: exam.date, maxMarks: exam.maxMarks, classId: exam.classId }, schoolId);
 
       const full = await getExamWithClass(exam.id, schoolId);
       res.status(201).json(full);

@@ -74,7 +74,7 @@ router.post("/notices", requireAuth, requireSchool, async (req, res): Promise<vo
         .returning();
 
       // Fire-and-forget: don't make the person wait for emails to send.
-      notifyNewNotice({ title: notice.title, body: notice.body, targetRole: notice.targetRole, classId: notice.classId });
+      notifyNewNotice({ title: notice.title, body: notice.body, targetRole: notice.targetRole, classId: notice.classId }, schoolId);
 
       res.status(201).json({ ...notice, createdByUser: null });
     } catch (err) {

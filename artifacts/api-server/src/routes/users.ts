@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { signEmailChangeToken, verifyEmailChangeToken } from "../lib/jwt";
 import { sendEmailChangeConfirmation, sendWelcomeEmail } from "../lib/mailer";
+import { isEmailEnabledForSchool } from "../lib/school-settings";
 import crypto from "crypto";
 
 const router = Router();
@@ -200,11 +201,13 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
         .returning();
 
       let emailSent = false;
-      try {
-        await sendWelcomeEmail(user.email, user.name, password);
-        emailSent = true;
-      } catch (mailErr) {
-        req.log.error(mailErr, "Failed to send welcome email");
+      if (await isEmailEnabledForSchool(me.schoolId)) {
+        try {
+          await sendWelcomeEmail(user.email, user.name, password);
+          emailSent = true;
+        } catch (mailErr) {
+          req.log.error(mailErr, "Failed to send welcome email");
+        }
       }
 
       const { passwordHash: _omit, ...safeUser } = user;

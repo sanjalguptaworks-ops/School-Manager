@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { sendWelcomeEmail } from "../lib/mailer";
+import { isEmailEnabledForSchool } from "../lib/school-settings";
 
 const router = Router();
 
@@ -99,11 +100,13 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
     }
 
     let emailSent = false;
-    try {
-      await sendWelcomeEmail(dbUser.email, dbUser.name, tempPassword);
-      emailSent = true;
-    } catch (mailErr) {
-      req.log.error(mailErr, "Failed to send invite welcome email");
+    if (await isEmailEnabledForSchool(me.schoolId)) {
+      try {
+        await sendWelcomeEmail(dbUser.email, dbUser.name, tempPassword);
+        emailSent = true;
+      } catch (mailErr) {
+        req.log.error(mailErr, "Failed to send invite welcome email");
+      }
     }
 
     const { passwordHash: _omit, ...safeUser } = dbUser;

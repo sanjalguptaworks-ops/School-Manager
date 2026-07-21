@@ -121,8 +121,12 @@ export default function StudentsList() {
                   <TableCell className="font-medium">{student.rollNo}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-                        {student.user?.name.charAt(0).toUpperCase()}
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center overflow-hidden shrink-0">
+                        {student.user?.avatarUrl ? (
+                          <img src={student.user.avatarUrl} alt={student.user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          student.user?.name.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-foreground">{student.user?.name}</p>

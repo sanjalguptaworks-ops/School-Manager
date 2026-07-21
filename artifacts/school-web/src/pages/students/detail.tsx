@@ -60,8 +60,12 @@ export default function StudentDetail() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold border-4 border-background shadow-sm">
-                {student.user?.name.charAt(0).toUpperCase()}
+              <div className="w-24 h-24 rounded-full bg-primary/10 text-primary flex items-center justify-center text-3xl font-bold border-4 border-background shadow-sm overflow-hidden">
+                {student.user?.avatarUrl ? (
+                  <img src={student.user.avatarUrl} alt={student.user.name} className="w-full h-full object-cover" />
+                ) : (
+                  student.user?.name.charAt(0).toUpperCase()
+                )}
               </div>
             </div>
 

@@ -45,8 +45,12 @@ export default function TeacherDetail() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold">
-              {teacher.user?.name.charAt(0).toUpperCase()}
+            <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold overflow-hidden shrink-0">
+              {teacher.user?.avatarUrl ? (
+                <img src={teacher.user.avatarUrl} alt={teacher.user.name} className="w-full h-full object-cover" />
+              ) : (
+                teacher.user?.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">

@@ -76,8 +76,12 @@ export default function TeachersList() {
                 <TableRow key={teacher.id} className="group hover:bg-muted/30">
                   <TableCell className="pl-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                        {teacher.user?.name.charAt(0).toUpperCase()}
+                      <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold overflow-hidden shrink-0">
+                        {teacher.user?.avatarUrl ? (
+                          <img src={teacher.user.avatarUrl} alt={teacher.user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          teacher.user?.name.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <span className="font-medium">{teacher.user?.name}</span>
                     </div>

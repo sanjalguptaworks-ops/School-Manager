@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { db, studentsTable, usersTable, classesTable, attendanceTable, feePaymentsTable, marksTable, examsTable } from "@workspace/db";
-import { eq, and, sql, gte, desc, asc } from "drizzle-orm";
+import { eq, and, sql, gte, desc, asc, inArray } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { sendWelcomeEmail } from "../lib/mailer";
 import { isEmailEnabledForSchool } from "../lib/school-settings";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 
 const router = Router();
 
@@ -42,13 +43,25 @@ async function getStudentWithRelations(id: number, schoolId: number) {
   return rows[0] || null;
 }
 
-// GET /students
+// GET /students — a teacher assigned to specific classes only sees students
+// in those classes; everyone else sees the whole school, as before.
 router.get("/students", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const { classId } = req.query as { classId?: string };
+
+    const scope = await getTeacherClassScope(authUserId);
+    if (classId && !canAccessClass(scope, parseInt(classId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (scope.kind === "restricted" && scope.classIds.length === 0) {
+      return res.json([]);
+    }
+
     const conditions = [eq(classesTable.schoolId, schoolId)];
     if (classId) conditions.push(eq(studentsTable.classId, parseInt(classId)));
+    else if (scope.kind === "restricted") conditions.push(inArray(studentsTable.classId, scope.classIds));
 
     const rows = await db
       .select({

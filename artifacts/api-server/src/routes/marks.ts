@@ -3,6 +3,7 @@ import { db, marksTable, studentsTable, examsTable, usersTable, classesTable } f
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 
 const router = Router();
 
@@ -21,8 +22,14 @@ router.get("/marks", requireAuth, requireSchool, async (req, res) => {
       return res.json([]);
     }
 
+    const classScope = await getTeacherClassScope(authUserId);
+    if (classScope.kind === "restricted" && classScope.classIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (examId) filters.push(eq(marksTable.examId, parseInt(examId)));
+    if (classScope.kind === "restricted") filters.push(inArray(examsTable.classId, classScope.classIds));
     if (studentId) filters.push(eq(marksTable.studentId, parseInt(studentId)));
     else if (scope.kind === "restricted") filters.push(inArray(marksTable.studentId, scope.studentIds));
 
@@ -53,6 +60,7 @@ router.post("/marks/bulk", requireAuth, requireSchool, async (req, res): Promise
   await requireRole(["admin", "teacher"], req, res, async () => {
     try {
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const { examId, records } = req.body;
       if (!examId || !Array.isArray(records)) {
         res.status(400).json({ error: "examId and records required" });
@@ -66,6 +74,12 @@ router.post("/marks/bulk", requireAuth, requireSchool, async (req, res): Promise
         .where(and(eq(examsTable.id, examId), eq(classesTable.schoolId, schoolId)))
         .limit(1);
       if (!exam) { res.status(400).json({ error: "Invalid examId" }); return; }
+
+      const classScope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(classScope, exam.classId)) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
 
       const studentIds = records.map((r: any) => r.studentId);
       const validStudents = await db

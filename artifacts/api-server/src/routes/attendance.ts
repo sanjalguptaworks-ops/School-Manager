@@ -3,6 +3,7 @@ import { db, attendanceTable, studentsTable, usersTable, classesTable } from "@w
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 
 const router = Router();
 
@@ -48,8 +49,17 @@ router.get("/attendance", requireAuth, requireSchool, async (req, res) => {
       return res.json([]);
     }
 
+    const classScope = await getTeacherClassScope(authUserId);
+    if (classId && !canAccessClass(classScope, parseInt(classId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (classScope.kind === "restricted" && classScope.classIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (classId) filters.push(eq(attendanceTable.classId, parseInt(classId)));
+    else if (classScope.kind === "restricted") filters.push(inArray(attendanceTable.classId, classScope.classIds));
     if (studentId) filters.push(eq(attendanceTable.studentId, parseInt(studentId)));
     else if (scope.kind === "restricted") filters.push(inArray(attendanceTable.studentId, scope.studentIds));
     if (date) filters.push(eq(attendanceTable.date, date));
@@ -68,12 +78,19 @@ router.post("/attendance/bulk", requireAuth, requireSchool, async (req, res): Pr
   await requireRole(["admin", "teacher"], req, res, async () => {
     try {
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const { classId, date, records } = req.body;
       if (!classId || !date || !Array.isArray(records)) {
         res.status(400).json({ error: "classId, date, records required" });
         return;
       }
-      const markedBy = (req as any).authUserId || null;
+      const markedBy = authUserId || null;
+
+      const classScope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(classScope, classId)) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
 
       const [cls] = await db
         .select({ id: classesTable.id })
@@ -126,16 +143,23 @@ router.patch("/attendance/:id", requireAuth, requireSchool, async (req, res): Pr
     try {
       const id = parseInt(req.params['id'] as string);
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const { status } = req.body;
       if (!status) { res.status(400).json({ error: "status required" }); return; }
 
       const [existing] = await db
-        .select({ id: attendanceTable.id })
+        .select({ id: attendanceTable.id, classId: attendanceTable.classId })
         .from(attendanceTable)
         .innerJoin(classesTable, eq(attendanceTable.classId, classesTable.id))
         .where(and(eq(attendanceTable.id, id), eq(classesTable.schoolId, schoolId)))
         .limit(1);
       if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+
+      const classScope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(classScope, existing.classId)) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
 
       const [updated] = await db
         .update(attendanceTable)

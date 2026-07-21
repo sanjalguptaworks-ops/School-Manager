@@ -1,14 +1,26 @@
 import { Router } from "express";
 import { db, classesTable, studentsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 
 const router = Router();
 
-// GET /classes
+// GET /classes — a teacher assigned to specific classes only sees those;
+// everyone else (admin, or a teacher not yet assigned to any class) sees
+// every class in the school, same as before this restriction existed.
 router.get("/classes", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+    const scope = await getTeacherClassScope(authUserId);
+    if (scope.kind === "restricted" && scope.classIds.length === 0) {
+      return res.json([]);
+    }
+
+    const filters = [eq(classesTable.schoolId, schoolId)];
+    if (scope.kind === "restricted") filters.push(inArray(classesTable.id, scope.classIds));
+
     const rows = await db
       .select({
         id: classesTable.id,
@@ -18,7 +30,7 @@ router.get("/classes", requireAuth, requireSchool, async (req, res) => {
       })
       .from(classesTable)
       .leftJoin(studentsTable, eq(studentsTable.classId, classesTable.id))
-      .where(eq(classesTable.schoolId, schoolId))
+      .where(and(...filters))
       .groupBy(classesTable.id);
     return res.json(rows);
   } catch (err) {
@@ -51,6 +63,9 @@ router.get("/classes/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+    const scope = await getTeacherClassScope(authUserId);
+    if (!canAccessClass(scope, id)) return res.status(403).json({ error: "Forbidden" });
     const rows = await db
       .select({
         id: classesTable.id,

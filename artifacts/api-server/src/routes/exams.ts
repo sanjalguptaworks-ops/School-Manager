@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, examsTable, classesTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { notifyNewExam } from "../lib/notify";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 
 const router = Router();
 
@@ -32,9 +33,20 @@ async function getExamWithClass(id: number, schoolId: number) {
 router.get("/exams", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const { classId } = req.query as { classId?: string };
+
+    const scope = await getTeacherClassScope(authUserId);
+    if (classId && !canAccessClass(scope, parseInt(classId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (scope.kind === "restricted" && scope.classIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters = [eq(classesTable.schoolId, schoolId)];
     if (classId) filters.push(eq(examsTable.classId, parseInt(classId)));
+    else if (scope.kind === "restricted") filters.push(inArray(examsTable.classId, scope.classIds));
 
     const rows = await db
       .select({
@@ -65,9 +77,16 @@ router.post("/exams", requireAuth, requireSchool, async (req, res): Promise<void
   await requireRole(["admin", "teacher"], req, res, async () => {
     try {
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const { name, classId, subject, date, maxMarks } = req.body;
       if (!name || !classId || !subject || !date || !maxMarks) {
         res.status(400).json({ error: "All fields required" });
+        return;
+      }
+
+      const scope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(scope, classId)) {
+        res.status(403).json({ error: "Forbidden" });
         return;
       }
 
@@ -100,8 +119,11 @@ router.get("/exams/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const exam = await getExamWithClass(id, schoolId);
     if (!exam) return res.status(404).json({ error: "Not found" });
+    const scope = await getTeacherClassScope(authUserId);
+    if (!canAccessClass(scope, exam.classId)) return res.status(403).json({ error: "Forbidden" });
     return res.json(exam);
   } catch (err) {
     req.log.error(err);
@@ -115,8 +137,15 @@ router.patch("/exams/:id", requireAuth, requireSchool, async (req, res): Promise
     try {
       const id = parseInt(req.params['id'] as string);
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const existing = await getExamWithClass(id, schoolId);
       if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+
+      const scope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(scope, existing.classId)) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
 
       const { name, subject, date, maxMarks } = req.body;
       const updates: Record<string, any> = {};
@@ -141,8 +170,14 @@ router.delete("/exams/:id", requireAuth, requireSchool, async (req, res): Promis
     try {
       const id = parseInt(req.params['id'] as string);
       const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
       const existing = await getExamWithClass(id, schoolId);
       if (!existing) { res.status(404).json({ error: "Not found" }); return; }
+      const scope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(scope, existing.classId)) {
+        res.status(403).json({ error: "Forbidden" });
+        return;
+      }
       await db.delete(examsTable).where(eq(examsTable.id, id));
       res.status(204).send();
     } catch (err) {

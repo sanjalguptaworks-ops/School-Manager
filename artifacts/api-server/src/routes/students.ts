@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { db, studentsTable, usersTable, classesTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { db, studentsTable, usersTable, classesTable, attendanceTable, feePaymentsTable, marksTable, examsTable } from "@workspace/db";
+import { eq, and, sql, gte, desc, asc } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { sendWelcomeEmail } from "../lib/mailer";
 import { isEmailEnabledForSchool } from "../lib/school-settings";
+import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
 
 const router = Router();
 
@@ -148,6 +149,92 @@ router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
   } catch (err) {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /students/:id/summary — dashboard card data for a single student:
+// attendance rate, pending fees, recent marks, and upcoming exams for their
+// class. Available to the student themselves, their linked parent(s), and
+// staff (admin/teacher) for any student in the school.
+router.get("/students/:id/summary", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params["id"] as string);
+    const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (!canAccessStudent(scope, id)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    const student = await getStudentWithRelations(id, schoolId);
+    if (!student) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    const today = new Date().toISOString().split("T")[0] as string;
+
+    const [attendanceStats, pendingFees, recentMarksRows, upcomingExamsRows] = await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)::int`,
+          present: sql<number>`count(*) filter (where ${attendanceTable.status} = 'present')::int`,
+        })
+        .from(attendanceTable)
+        .where(eq(attendanceTable.studentId, id)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(feePaymentsTable)
+        .where(and(eq(feePaymentsTable.studentId, id), eq(feePaymentsTable.status, "pending"))),
+      db
+        .select({
+          marksObtained: marksTable.marksObtained,
+          exam: {
+            id: examsTable.id,
+            name: examsTable.name,
+            subject: examsTable.subject,
+            date: examsTable.date,
+            maxMarks: examsTable.maxMarks,
+          },
+        })
+        .from(marksTable)
+        .innerJoin(examsTable, eq(marksTable.examId, examsTable.id))
+        .where(eq(marksTable.studentId, id))
+        .orderBy(desc(examsTable.date))
+        .limit(5),
+      db
+        .select({ id: examsTable.id, name: examsTable.name, subject: examsTable.subject, date: examsTable.date })
+        .from(examsTable)
+        .where(and(eq(examsTable.classId, student.classId), gte(examsTable.date, today)))
+        .orderBy(asc(examsTable.date))
+        .limit(5),
+    ]);
+
+    const { total, present } = attendanceStats[0] ?? { total: 0, present: 0 };
+    const recentMarks = recentMarksRows.map((row) => {
+      const marksObtained = parseFloat(row.marksObtained as string);
+      return {
+        exam: row.exam,
+        marksObtained,
+        percentage: row.exam?.maxMarks ? Math.round((marksObtained / row.exam.maxMarks) * 100 * 10) / 10 : 0,
+      };
+    });
+
+    res.json({
+      attendance: {
+        total,
+        present,
+        attendanceRate: total > 0 ? Math.round((present / total) * 100 * 10) / 10 : 0,
+      },
+      fees: { pending: pendingFees[0]?.count ?? 0 },
+      recentMarks,
+      upcomingExams: upcomingExamsRows,
+    });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

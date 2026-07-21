@@ -28,6 +28,8 @@ import ProfilePage from '@/pages/profile/index';
 import UsersPage from '@/pages/users/index';
 import BillingPage from '@/pages/billing/index';
 import CreatorSchoolsPage from '@/pages/creator/schools';
+import MyAttendancePage from '@/pages/my-attendance/index';
+import MyReportCardPage from '@/pages/my-report-card/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -148,6 +150,8 @@ function Router() {
       <Route path="/profile"><ProtectedRoute component={ProfilePage} /></Route>
       <Route path="/users"><ProtectedRoute component={UsersPage} /></Route>
       <Route path="/billing"><ProtectedRoute component={BillingPage} /></Route>
+      <Route path="/my-attendance"><ProtectedRoute component={MyAttendancePage} /></Route>
+      <Route path="/my-report-card"><ProtectedRoute component={MyReportCardPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, marksTable, studentsTable, examsTable, usersTable, classesTable } from "@workspace/db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
+import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
 
 const router = Router();
 
@@ -9,10 +10,21 @@ const router = Router();
 router.get("/marks", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const { examId, studentId } = req.query as Record<string, string>;
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (studentId && !canAccessStudent(scope, parseInt(studentId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (scope.kind === "restricted" && scope.studentIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (examId) filters.push(eq(marksTable.examId, parseInt(examId)));
     if (studentId) filters.push(eq(marksTable.studentId, parseInt(studentId)));
+    else if (scope.kind === "restricted") filters.push(inArray(marksTable.studentId, scope.studentIds));
 
     const rows = await db
       .select({
@@ -94,7 +106,13 @@ router.post("/marks/bulk", requireAuth, requireSchool, async (req, res): Promise
 router.get("/marks/report/:studentId", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const studentId = parseInt(req.params['studentId'] as string);
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (!canAccessStudent(scope, studentId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     // Get student info, scoped to this school
     const studentRows = await db

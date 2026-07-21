@@ -3,7 +3,7 @@
  * Safe to run multiple times (skips if data exists).
  * All seeded accounts share the password printed at the end.
  */
-import { db, schoolsTable, usersTable, classesTable, studentsTable, teachersTable, noticesTable, examsTable, marksTable, feeStructuresTable, feePaymentsTable } from "@workspace/db";
+import { db, schoolsTable, usersTable, classesTable, studentsTable, teachersTable, noticesTable, examsTable, marksTable, feeStructuresTable, feePaymentsTable, attendanceTable } from "@workspace/db";
 import { hashPassword } from "./lib/password";
 
 const SEED_PASSWORD = "Password123!";
@@ -118,12 +118,23 @@ async function seed() {
     { studentId: s6.id, feeStructureId: fs9A.id, status: "paid", paidOn: "2026-07-12" },
   ]);
 
+  // Attendance (a couple weeks for s1/s2 in Class 10A)
+  await db.insert(attendanceTable).values([
+    { studentId: s1.id, classId: cls10A.id, date: "2026-07-15", status: "present" },
+    { studentId: s1.id, classId: cls10A.id, date: "2026-07-16", status: "present" },
+    { studentId: s1.id, classId: cls10A.id, date: "2026-07-17", status: "absent" },
+    { studentId: s1.id, classId: cls10A.id, date: "2026-07-18", status: "late" },
+    { studentId: s1.id, classId: cls10A.id, date: "2026-07-20", status: "present" },
+    { studentId: s2.id, classId: cls10A.id, date: "2026-07-15", status: "present" },
+    { studentId: s2.id, classId: cls10A.id, date: "2026-07-16", status: "absent" },
+  ]);
+
   console.log("Seed complete.");
   console.log("");
   console.log("All seeded accounts share this password:", SEED_PASSWORD);
   console.log("Admin login: admin@educore.school");
   console.log("Teacher login: rajesh@educore.school");
-  console.log("Student login: amit@student.educore.school");
+  console.log("Student login: amit@student.educore.school (s1) / sneha@student.educore.school (s2)");
   console.log("");
   console.log("Change these passwords after first login in a real deployment.");
   process.exit(0);

@@ -45,6 +45,8 @@ const navConfig = {
   ],
   student: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { href: "/my-attendance", icon: CalendarCheck, label: "Attendance" },
+    { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },

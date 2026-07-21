@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db, feeStructuresTable, feePaymentsTable, classesTable, studentsTable, usersTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { notifyFeeDue } from "../lib/notify";
+import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
 
 const router = Router();
 
@@ -71,9 +72,20 @@ router.post("/fee-structures", requireAuth, requireSchool, async (req, res): Pro
 router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const { studentId, classId, status } = req.query as Record<string, string>;
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (studentId && !canAccessStudent(scope, parseInt(studentId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (scope.kind === "restricted" && scope.studentIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (studentId) filters.push(eq(feePaymentsTable.studentId, parseInt(studentId)));
+    else if (scope.kind === "restricted") filters.push(inArray(feePaymentsTable.studentId, scope.studentIds));
     if (classId) filters.push(eq(studentsTable.classId, parseInt(classId)));
     if (status) filters.push(eq(feePaymentsTable.status, status as any));
 

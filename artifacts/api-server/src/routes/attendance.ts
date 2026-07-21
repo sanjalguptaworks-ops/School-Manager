@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, attendanceTable, studentsTable, usersTable, classesTable } from "@workspace/db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
+import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
 
 const router = Router();
 
@@ -36,10 +37,21 @@ async function buildAttendanceQuery(filters: any[] = []) {
 router.get("/attendance", requireAuth, requireSchool, async (req, res) => {
   try {
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
     const { classId, studentId, date, month } = req.query as Record<string, string>;
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (studentId && !canAccessStudent(scope, parseInt(studentId))) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (scope.kind === "restricted" && scope.studentIds.length === 0) {
+      return res.json([]);
+    }
+
     const filters: any[] = [eq(classesTable.schoolId, schoolId)];
     if (classId) filters.push(eq(attendanceTable.classId, parseInt(classId)));
     if (studentId) filters.push(eq(attendanceTable.studentId, parseInt(studentId)));
+    else if (scope.kind === "restricted") filters.push(inArray(attendanceTable.studentId, scope.studentIds));
     if (date) filters.push(eq(attendanceTable.date, date));
     if (month) filters.push(sql`to_char(${attendanceTable.date}::date, 'YYYY-MM') = ${month}`);
 

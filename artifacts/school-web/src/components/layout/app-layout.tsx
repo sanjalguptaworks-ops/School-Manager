@@ -68,6 +68,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const navItems = navConfig[user.role as keyof typeof navConfig] || [];
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  // The creator manages every school, so it keeps the platform's own EduCore
+  // branding; everyone else sees their own school's logo/name once the
+  // creator has set one, falling back to EduCore branding otherwise.
+  const brandLogo = user.role !== "creator" && user.schoolLogoUrl ? user.schoolLogoUrl : `${basePath}/logo.svg`;
+  const brandName = user.role !== "creator" && user.schoolName ? user.schoolName : "EduCore";
 
   const handleLogout = async () => {
     await logout();
@@ -77,8 +82,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card border-r w-64 shadow-sm relative z-20">
       <div className="p-6 flex items-center gap-3">
-        <img src={`${basePath}/logo.svg`} alt="EduCore Logo" className="w-8 h-8" />
-        <h1 className="font-bold text-xl tracking-tight text-foreground">EduCore</h1>
+        <img src={brandLogo} alt={brandName} className="w-8 h-8 rounded object-contain" />
+        <h1 className="font-bold text-xl tracking-tight text-foreground truncate">{brandName}</h1>
       </div>
       
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-1">
@@ -159,9 +164,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 border-b bg-card z-30">
-          <div className="flex items-center gap-2">
-            <img src={`${basePath}/logo.svg`} alt="EduCore Logo" className="w-6 h-6" />
-            <h1 className="font-bold text-lg">EduCore</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={brandLogo} alt={brandName} className="w-6 h-6 rounded object-contain shrink-0" />
+            <h1 className="font-bold text-lg truncate">{brandName}</h1>
           </div>
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

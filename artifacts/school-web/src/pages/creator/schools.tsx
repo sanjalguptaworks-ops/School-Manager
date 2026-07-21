@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAppAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Clock, School as SchoolIcon, Settings, Ban, Wallet, Plus, Trash2, Send } from "lucide-react";
+import { uploadSchoolLogo } from "@/lib/upload-image";
+import { Check, X, Clock, School as SchoolIcon, Settings, Ban, Wallet, Plus, Trash2, Send, Camera } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -29,6 +30,7 @@ interface School {
   contactEmail: string | null;
   contactPhone: string | null;
   address: string | null;
+  logoUrl: string | null;
   suspendedFrom: string | null;
   suspendedUntil: string | null;
   emailEnabled: boolean;
@@ -262,9 +264,12 @@ export default function CreatorSchoolsPage() {
 function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const { toast } = useToast();
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState(school.name);
+  const [logoUrl, setLogoUrl] = useState(school.logoUrl || "");
   const [contactEmail, setContactEmail] = useState(school.contactEmail || "");
   const [contactPhone, setContactPhone] = useState(school.contactPhone || "");
   const [address, setAddress] = useState(school.address || "");
@@ -280,6 +285,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
     setOpen(v);
     if (v) {
       setName(school.name);
+      setLogoUrl(school.logoUrl || "");
       setContactEmail(school.contactEmail || "");
       setContactPhone(school.contactPhone || "");
       setAddress(school.address || "");
@@ -298,6 +304,31 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
     setSuspendedUntil("");
   };
 
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please choose an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image is too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const url = await uploadSchoolLogo(file);
+      setLogoUrl(url);
+    } catch (err: any) {
+      toast({ title: err?.message || "Could not upload logo", variant: "destructive" });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -307,6 +338,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          logoUrl: logoUrl.trim() || null,
           contactEmail: contactEmail.trim() || null,
           contactPhone: contactPhone.trim() || null,
           address: address.trim() || null,
@@ -347,6 +379,42 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
           <div className="space-y-1.5">
             <Label>School name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>School logo</Label>
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border">
+                {logoUrl ? (
+                  <img src={logoUrl} alt={name} className="w-full h-full object-contain" />
+                ) : (
+                  <SchoolIcon className="w-6 h-6 text-muted-foreground" />
+                )}
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                disabled={uploadingLogo}
+                onClick={() => logoInputRef.current?.click()}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                {uploadingLogo ? "Uploading..." : logoUrl ? "Change logo" : "Upload logo"}
+              </Button>
+              {logoUrl && (
+                <Button type="button" variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setLogoUrl("")}>
+                  Remove
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Shown in place of the EduCore logo for this school's own users.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

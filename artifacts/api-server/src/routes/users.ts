@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, usersTable, studentsTable, teachersTable, emailChangesTable } from "@workspace/db";
+import { db, usersTable, studentsTable, teachersTable, emailChangesTable, schoolsTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
@@ -20,7 +20,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    const extra: Record<string, number | null> = { studentId: null, teacherId: null };
+    const extra: Record<string, number | string | null> = { studentId: null, teacherId: null };
     if (user.role === "student") {
       const [s] = await db.select({ id: studentsTable.id }).from(studentsTable).where(eq(studentsTable.userId, user.id)).limit(1);
       extra.studentId = s?.id ?? null;
@@ -28,6 +28,18 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
     if (user.role === "teacher") {
       const [t] = await db.select({ id: teachersTable.id }).from(teachersTable).where(eq(teachersTable.userId, user.id)).limit(1);
       extra.teacherId = t?.id ?? null;
+    }
+    // School branding, so the sidebar can show this school's own logo/name
+    // instead of the generic EduCore mark. Not applicable to creator accounts,
+    // which aren't tied to a single school.
+    if (user.schoolId) {
+      const [school] = await db
+        .select({ name: schoolsTable.name, logoUrl: schoolsTable.logoUrl })
+        .from(schoolsTable)
+        .where(eq(schoolsTable.id, user.schoolId))
+        .limit(1);
+      extra.schoolName = school?.name ?? null;
+      extra.schoolLogoUrl = school?.logoUrl ?? null;
     }
     const { passwordHash, ...safeUser } = user;
     res.json({ ...safeUser, ...extra });

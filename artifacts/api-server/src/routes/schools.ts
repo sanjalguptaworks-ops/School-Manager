@@ -124,6 +124,7 @@ router.patch("/schools/:id", requireAuth, async (req, res): Promise<void> => {
         contactEmail,
         contactPhone,
         address,
+        logoUrl,
         emailEnabled,
         smsEnabled,
         suspendedFrom,
@@ -138,6 +139,7 @@ router.patch("/schools/:id", requireAuth, async (req, res): Promise<void> => {
       if (typeof contactEmail === "string") updates.contactEmail = contactEmail.trim() || null;
       if (typeof contactPhone === "string") updates.contactPhone = contactPhone.trim() || null;
       if (typeof address === "string") updates.address = address.trim() || null;
+      if (logoUrl === null || typeof logoUrl === "string") updates.logoUrl = logoUrl;
       if (typeof emailEnabled === "boolean") updates.emailEnabled = emailEnabled;
       if (typeof smsEnabled === "boolean") updates.smsEnabled = smsEnabled;
       if (typeof discountPercent === "number") updates.discountPercent = Math.max(0, Math.min(100, Math.round(discountPercent)));

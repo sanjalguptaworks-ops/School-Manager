@@ -10,6 +10,8 @@ export interface AuthUser {
   avatarUrl?: string | null;
   role: "creator" | "admin" | "teacher" | "student" | "parent";
   schoolId?: number | null;
+  schoolName?: string | null;
+  schoolLogoUrl?: string | null;
   studentId?: number | null;
   teacherId?: number | null;
   [key: string]: any;

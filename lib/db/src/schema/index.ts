@@ -14,3 +14,4 @@ export * from "./marks";
 export * from "./notices";
 export * from "./fees";
 export * from "./parent-students";
+export * from "./certificates";

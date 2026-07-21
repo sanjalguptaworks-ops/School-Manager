@@ -14,6 +14,10 @@ export const schoolsTable = pgTable("schools", {
   // School-uploaded branding, shown in place of the generic EduCore mark for
   // that school's own users. Only the creator sets this (see routes/schools.ts).
   logoUrl: text("logo_url"),
+  // The school's own certificate background/design, uploaded by their admin
+  // (see routes/schools.ts PATCH /schools/me). Certificates for this
+  // school's students are rendered with this image behind the text.
+  certificateTemplateUrl: text("certificate_template_url"),
   // Scheduled suspension window. If suspendedFrom is set and today falls
   // within [suspendedFrom, suspendedUntil] (or suspendedUntil is null,
   // meaning "indefinitely"), the school's users are blocked from logging in

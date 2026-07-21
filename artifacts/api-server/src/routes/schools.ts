@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, schoolsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middlewares/auth";
+import { requireAuth, requireRole, requireSchool } from "../middlewares/auth";
 
 const router = Router();
 
@@ -77,6 +77,57 @@ router.post("/schools/:id/reject", requireAuth, async (req, res): Promise<void> 
         .set({ status: "rejected" })
         .where(eq(schoolsTable.id, id))
         .returning();
+      if (!school) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      res.json(school);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
+// GET /schools/me — admin only, school-scoped. Just enough of the school's
+// own profile for admin-facing UI (currently: the certificate template).
+router.get("/schools/me", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const [school] = await db
+        .select({ id: schoolsTable.id, name: schoolsTable.name, certificateTemplateUrl: schoolsTable.certificateTemplateUrl })
+        .from(schoolsTable)
+        .where(eq(schoolsTable.id, schoolId))
+        .limit(1);
+      if (!school) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      res.json(school);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
+// PATCH /schools/me — admin only, school-scoped. Deliberately narrow (just
+// the certificate template for now) -- everything else about a school's
+// profile/billing stays creator-managed via PATCH /schools/:id below.
+// Registered before /schools/:id so "me" is never swallowed by that route.
+router.patch("/schools/me", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { certificateTemplateUrl } = req.body;
+
+      const updates: Record<string, any> = {};
+      if (certificateTemplateUrl === null || typeof certificateTemplateUrl === "string") {
+        updates.certificateTemplateUrl = certificateTemplateUrl;
+      }
+
+      const [school] = await db.update(schoolsTable).set(updates).where(eq(schoolsTable.id, schoolId)).returning();
       if (!school) {
         res.status(404).json({ error: "Not found" });
         return;

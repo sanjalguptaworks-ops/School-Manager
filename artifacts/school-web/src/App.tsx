@@ -30,6 +30,9 @@ import BillingPage from '@/pages/billing/index';
 import CreatorSchoolsPage from '@/pages/creator/schools';
 import MyAttendancePage from '@/pages/my-attendance/index';
 import MyReportCardPage from '@/pages/my-report-card/index';
+import CertificatesPage from '@/pages/certificates/index';
+import CertificateViewPage from '@/pages/certificates/view';
+import MyCertificatesPage from '@/pages/my-certificates/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -107,6 +110,18 @@ function ProtectedRoute({ component: Component }: { component: any }) {
   );
 }
 
+// Authenticated but chromeless -- no sidebar/header, for pages meant to be
+// printed (a certificate) rather than navigated within the app shell.
+function BareAuthRoute({ component: Component }: { component: any }) {
+  const { user, isLoading, authError, refresh } = useAppAuth();
+
+  if (isLoading) return <LoadingScreen />;
+  if (authError) return <ConnectionErrorScreen onRetry={refresh} />;
+  if (!user) return <Redirect to="/login" />;
+
+  return <Component />;
+}
+
 function CreatorRoute({ component: Component }: { component: any }) {
   const { user, isLoading, authError, refresh } = useAppAuth();
 
@@ -152,6 +167,9 @@ function Router() {
       <Route path="/billing"><ProtectedRoute component={BillingPage} /></Route>
       <Route path="/my-attendance"><ProtectedRoute component={MyAttendancePage} /></Route>
       <Route path="/my-report-card"><ProtectedRoute component={MyReportCardPage} /></Route>
+      <Route path="/certificates"><ProtectedRoute component={CertificatesPage} /></Route>
+      <Route path="/my-certificates"><ProtectedRoute component={MyCertificatesPage} /></Route>
+      <Route path="/certificates/:id/view"><BareAuthRoute component={CertificateViewPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

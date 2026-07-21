@@ -41,3 +41,7 @@ export function uploadProfilePicture(file: File): Promise<string> {
 export function uploadSchoolLogo(file: File): Promise<string> {
   return uploadImage(file, "educore/school-logos");
 }
+
+export function uploadCertificateTemplate(file: File): Promise<string> {
+  return uploadImage(file, "educore/certificate-templates");
+}

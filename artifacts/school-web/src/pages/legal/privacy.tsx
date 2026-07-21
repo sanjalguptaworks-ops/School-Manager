@@ -92,7 +92,7 @@ export default function PrivacyPage() {
       <p>We may update this Privacy Policy from time to time; the "Last updated" date above will reflect the latest revision.</p>
 
       <h2>10. Contact</h2>
-      <p>Questions about this Privacy Policy can be sent to support@thinknbuild.in.</p>
+      <p>Questions about this Privacy Policy can be sent to thinknbuild.in@gmail.com.</p>
     </LegalLayout>
   );
 }

@@ -18,7 +18,7 @@ export default function RefundPolicyPage() {
 
       <h2>3. Cancellations</h2>
       <p>
-        A school may cancel its subscription at any time by contacting support@thinknbuild.in or, where enabled, by
+        A school may cancel its subscription at any time by contacting thinknbuild.in@gmail.com or, where enabled, by
         turning off automatic payment from the Billing page. Cancelling stops future billing; the school keeps
         access through the end of the period already paid for.
       </p>
@@ -27,7 +27,7 @@ export default function RefundPolicyPage() {
       <p>
         Because the trial period exists specifically so a school can evaluate EduCore before paying, subscription
         fees are generally non-refundable once a paid billing period has begun. If you believe you were charged in
-        error — for example, a duplicate charge or a charge after cancellation — contact support@thinknbuild.in
+        error — for example, a duplicate charge or a charge after cancellation — contact thinknbuild.in@gmail.com
         within 7 days of the charge and we will review it. Approved refunds are issued to the original payment
         method through Razorpay and may take 5–10 business days to appear, depending on your bank.
       </p>
@@ -40,7 +40,7 @@ export default function RefundPolicyPage() {
       </p>
 
       <h2>6. Contact</h2>
-      <p>For billing questions, cancellations, or refund requests, email support@thinknbuild.in.</p>
+      <p>For billing questions, cancellations, or refund requests, email thinknbuild.in@gmail.com.</p>
     </LegalLayout>
   );
 }

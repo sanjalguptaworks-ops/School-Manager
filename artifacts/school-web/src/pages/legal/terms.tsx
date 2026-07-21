@@ -78,7 +78,7 @@ export default function TermsPage() {
       <p>These Terms are governed by the laws of India, without regard to conflict-of-law principles.</p>
 
       <h2>10. Contact</h2>
-      <p>Questions about these Terms can be sent to support@thinknbuild.in.</p>
+      <p>Questions about these Terms can be sent to thinknbuild.in@gmail.com.</p>
     </LegalLayout>
   );
 }

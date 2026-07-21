@@ -4,8 +4,8 @@
  * Returns the temporary password (shown once to the admin).
  */
 import { Router } from "express";
-import { db, usersTable, studentsTable, teachersTable, parentStudentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, studentsTable, teachersTable, classesTable, parentStudentsTable } from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
 import { sendWelcomeEmail } from "../lib/mailer";
@@ -95,8 +95,19 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
     }
 
     if (role === "parent" && Array.isArray(studentIds) && studentIds.length > 0) {
-      const links = studentIds.map((sid: number) => ({ parentId: dbUser.id, studentId: sid }));
-      await db.insert(parentStudentsTable).values(links).onConflictDoNothing();
+      // Only link students that actually belong to this admin's own school --
+      // otherwise a passed-in ID from another school would create a
+      // cross-school parent/student link.
+      const validStudents = await db
+        .select({ id: studentsTable.id })
+        .from(studentsTable)
+        .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+        .where(and(inArray(studentsTable.id, studentIds), eq(classesTable.schoolId, me.schoolId)));
+      const validIds = new Set(validStudents.map((s) => s.id));
+      const links = studentIds.filter((sid: number) => validIds.has(sid)).map((sid: number) => ({ parentId: dbUser.id, studentId: sid }));
+      if (links.length > 0) {
+        await db.insert(parentStudentsTable).values(links).onConflictDoNothing();
+      }
     }
 
     let emailSent = false;

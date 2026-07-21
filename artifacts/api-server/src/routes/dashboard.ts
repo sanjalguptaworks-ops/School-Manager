@@ -11,12 +11,15 @@ import {
   usersTable,
 } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
-import { requireAuth, requireSchool } from "../middlewares/auth";
+import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 
 const router = Router();
 
-// GET /dashboard/summary
-router.get("/dashboard/summary", requireAuth, requireSchool, async (req, res) => {
+// GET /dashboard/summary — admin/teacher only: school-wide counts and
+// financial totals aren't shown to students/parents in the UI, so the API
+// shouldn't hand them out to a direct call either.
+router.get("/dashboard/summary", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
   try {
     const schoolId = (req as any).schoolId;
     const today = new Date().toISOString().split("T")[0];
@@ -75,14 +78,16 @@ router.get("/dashboard/summary", requireAuth, requireSchool, async (req, res) =>
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
+  });
 });
 
-// GET /dashboard/attendance-summary
-router.get("/dashboard/attendance-summary", requireAuth, requireSchool, async (req, res) => {
+// GET /dashboard/attendance-summary — admin/teacher only (see /dashboard/summary above).
+router.get("/dashboard/attendance-summary", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
   try {
     const schoolId = (req as any).schoolId;
     const { date } = req.query as { date?: string };
-    if (!date) return res.status(400).json({ error: "date required" });
+    if (!date) { res.status(400).json({ error: "date required" }); return; }
 
     const rows = await db
       .select({
@@ -102,11 +107,12 @@ router.get("/dashboard/attendance-summary", requireAuth, requireSchool, async (r
       .where(eq(classesTable.schoolId, schoolId))
       .groupBy(classesTable.id);
 
-    return res.json(rows);
+    res.json(rows);
   } catch (err) {
     req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
+  });
 });
 
 // GET /dashboard/recent-notices
@@ -144,8 +150,9 @@ router.get("/dashboard/recent-notices", requireAuth, requireSchool, async (req, 
   }
 });
 
-// GET /dashboard/fee-overview
-router.get("/dashboard/fee-overview", requireAuth, requireSchool, async (req, res) => {
+// GET /dashboard/fee-overview — admin/teacher only (see /dashboard/summary above).
+router.get("/dashboard/fee-overview", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
   try {
     const schoolId = (req as any).schoolId;
     const [stats] = await db
@@ -161,7 +168,7 @@ router.get("/dashboard/fee-overview", requireAuth, requireSchool, async (req, re
       .innerJoin(classesTable, eq(feeStructuresTable.classId, classesTable.id))
       .where(eq(classesTable.schoolId, schoolId));
 
-    return res.json({
+    res.json({
       totalDue: parseFloat(String(stats.totalDue)),
       totalCollected: parseFloat(String(stats.totalCollected)),
       totalPending: parseFloat(String(stats.totalPending)),
@@ -170,8 +177,9 @@ router.get("/dashboard/fee-overview", requireAuth, requireSchool, async (req, re
     });
   } catch (err) {
     req.log.error(err);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
+  });
 });
 
 export default router;

@@ -181,6 +181,7 @@ router.get("/students/:id/summary", requireAuth, requireSchool, async (req, res)
         .select({
           total: sql<number>`count(*)::int`,
           present: sql<number>`count(*) filter (where ${attendanceTable.status} = 'present')::int`,
+          late: sql<number>`count(*) filter (where ${attendanceTable.status} = 'late')::int`,
         })
         .from(attendanceTable)
         .where(eq(attendanceTable.studentId, id)),
@@ -212,7 +213,7 @@ router.get("/students/:id/summary", requireAuth, requireSchool, async (req, res)
         .limit(5),
     ]);
 
-    const { total, present } = attendanceStats[0] ?? { total: 0, present: 0 };
+    const { total, present, late } = attendanceStats[0] ?? { total: 0, present: 0, late: 0 };
     const recentMarks = recentMarksRows.map((row) => {
       const marksObtained = parseFloat(row.marksObtained as string);
       return {
@@ -226,7 +227,8 @@ router.get("/students/:id/summary", requireAuth, requireSchool, async (req, res)
       attendance: {
         total,
         present,
-        attendanceRate: total > 0 ? Math.round((present / total) * 100 * 10) / 10 : 0,
+        // "Late" still means they showed up, so it counts toward the rate.
+        attendanceRate: total > 0 ? Math.round(((present + late) / total) * 100 * 10) / 10 : 0,
       },
       fees: { pending: pendingFees[0]?.count ?? 0 },
       recentMarks,

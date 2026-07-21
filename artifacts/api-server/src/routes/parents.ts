@@ -1,17 +1,6 @@
 import { Router } from "express";
-import {
-  db,
-  parentStudentsTable,
-  studentsTable,
-  usersTable,
-  classesTable,
-  attendanceTable,
-  marksTable,
-  examsTable,
-  feePaymentsTable,
-  feeStructuresTable,
-} from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+import { db, parentStudentsTable, studentsTable, usersTable, classesTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole, loadUser } from "../middlewares/auth";
 
 const router = Router();
@@ -150,128 +139,11 @@ router.delete("/parents/:parentId/link-student/:studentId", requireAuth, require
   });
 });
 
-// GET /students/:studentId/summary  — attendance + marks + fee summary for a student.
-// Admin/teacher can view any student; a student can view only their own record;
-// a parent can view only a student they're linked to.
-router.get("/students/:studentId/summary", requireAuth, requireSchool, loadUser, async (req, res): Promise<void> => {
-  try {
-    const schoolId = (req as any).schoolId;
-    const dbUser = (req as any).dbUser;
-    const studentId = parseInt(req.params["studentId"] as string);
-
-    // Upcoming exams (from student's class) — also validates the student belongs to this school
-    const [studentRow] = await db
-      .select({ classId: studentsTable.classId, userId: studentsTable.userId })
-      .from(studentsTable)
-      .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
-      .where(and(eq(studentsTable.id, studentId), eq(classesTable.schoolId, schoolId)))
-      .limit(1);
-
-    if (!studentRow) {
-      res.status(404).json({ error: "Student not found" });
-      return;
-    }
-
-    let allowed = ["admin", "teacher"].includes(dbUser?.role);
-    if (!allowed && dbUser?.role === "student") {
-      allowed = studentRow.userId === dbUser.id;
-    }
-    if (!allowed && dbUser?.role === "parent") {
-      const [link] = await db
-        .select({ id: parentStudentsTable.id })
-        .from(parentStudentsTable)
-        .where(and(eq(parentStudentsTable.parentId, dbUser.id), eq(parentStudentsTable.studentId, studentId)))
-        .limit(1);
-      allowed = !!link;
-    }
-    if (!allowed) {
-      res.status(403).json({ error: "Forbidden" });
-      return;
-    }
-
-    // Attendance totals
-    const [attendance] = await db
-      .select({
-        total: sql<number>`count(*)::int`,
-        present: sql<number>`count(*) filter (where ${attendanceTable.status} = 'present')::int`,
-        absent: sql<number>`count(*) filter (where ${attendanceTable.status} = 'absent')::int`,
-        late: sql<number>`count(*) filter (where ${attendanceTable.status} = 'late')::int`,
-      })
-      .from(attendanceTable)
-      .where(eq(attendanceTable.studentId, studentId));
-
-    const attendanceRate = attendance.total > 0
-      ? Math.round(((attendance.present + attendance.late) / attendance.total) * 100 * 10) / 10
-      : 0;
-
-    // Marks + exams
-    const markRows = await db
-      .select({
-        marksObtained: marksTable.marksObtained,
-        exam: {
-          id: examsTable.id,
-          name: examsTable.name,
-          subject: examsTable.subject,
-          date: examsTable.date,
-          maxMarks: examsTable.maxMarks,
-        },
-      })
-      .from(marksTable)
-      .leftJoin(examsTable, eq(marksTable.examId, examsTable.id))
-      .where(eq(marksTable.studentId, studentId))
-      .orderBy(sql`${examsTable.date} desc`);
-
-    // Fee status
-    const feeRows = await db
-      .select({
-        id: feePaymentsTable.id,
-        status: feePaymentsTable.status,
-        paidOn: feePaymentsTable.paidOn,
-        amount: feeStructuresTable.amount,
-        term: feeStructuresTable.term,
-        dueDate: feeStructuresTable.dueDate,
-      })
-      .from(feePaymentsTable)
-      .leftJoin(feeStructuresTable, eq(feePaymentsTable.feeStructureId, feeStructuresTable.id))
-      .where(eq(feePaymentsTable.studentId, studentId));
-
-    const pendingFees = feeRows.filter((f) => f.status === "pending").length;
-    const paidFees = feeRows.filter((f) => f.status === "paid").length;
-
-    const upcomingExams = await db
-      .select({
-        id: examsTable.id,
-        name: examsTable.name,
-        subject: examsTable.subject,
-        date: examsTable.date,
-        maxMarks: examsTable.maxMarks,
-      })
-      .from(examsTable)
-      .where(
-        and(
-          eq(examsTable.classId, studentRow.classId),
-          sql`${examsTable.date} >= current_date`,
-        ),
-      )
-      .orderBy(examsTable.date)
-      .limit(5);
-
-    res.json({
-      attendance: { ...attendance, attendanceRate },
-      recentMarks: markRows.slice(0, 5).map((r) => ({
-        exam: r.exam,
-        marksObtained: parseFloat(r.marksObtained as string),
-        percentage: r.exam?.maxMarks
-          ? Math.round((parseFloat(r.marksObtained as string) / r.exam.maxMarks) * 100 * 10) / 10
-          : 0,
-      })),
-      fees: { total: feeRows.length, pending: pendingFees, paid: paidFees, rows: feeRows },
-      upcomingExams,
-    });
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+// Note: a student/parent summary endpoint used to live here too, at the same
+// path shape as students.ts's GET /students/:id/summary. Since studentsRouter
+// is registered before parentsRouter (see routes/index.ts), this one was
+// silently shadowed and never actually ran -- removed in favor of the single
+// implementation in students.ts (which now also folds in "late" attendance
+// toward the rate, matching what this version used to do).
 
 export default router;

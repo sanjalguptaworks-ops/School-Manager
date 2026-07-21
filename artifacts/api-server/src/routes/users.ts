@@ -10,6 +10,11 @@ import crypto from "crypto";
 
 const router = Router();
 
+// "creator" is the platform-wide superuser role and is never assignable
+// through these school-scoped endpoints -- an admin setting a user's role
+// must only ever be able to grant roles that stay within their own school.
+const ASSIGNABLE_ROLES = ["admin", "teacher", "student", "parent"];
+
 // GET /users/me — return the logged-in user + studentId/teacherId
 router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
   try {
@@ -206,6 +211,10 @@ router.post("/users", requireAuth, async (req, res): Promise<void> => {
         res.status(400).json({ error: "name, email, role, password required" });
         return;
       }
+      if (!ASSIGNABLE_ROLES.includes(role)) {
+        res.status(400).json({ error: "Invalid role" });
+        return;
+      }
       const passwordHash = await hashPassword(password);
       const [user] = await db
         .insert(usersTable)
@@ -277,6 +286,10 @@ router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
       }
       const id = parseInt(req.params["id"] as string);
       const { name, role, email, phone, avatarUrl } = req.body;
+      if (role !== undefined && !ASSIGNABLE_ROLES.includes(role)) {
+        res.status(400).json({ error: "Invalid role" });
+        return;
+      }
       const updates: Record<string, any> = {};
       if (name) updates.name = name;
       if (role) updates.role = role;

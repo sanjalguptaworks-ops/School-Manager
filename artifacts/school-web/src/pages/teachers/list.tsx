@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useListTeachers, useCreateTeacher, getListTeachersQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Search, Plus, GraduationCap, Copy, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Search, Plus, GraduationCap, Copy, Check, Upload, Download, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { parseCsv, rowsToObjects, toCsv, downloadCsv } from "@/lib/csv";
+
+const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+interface BulkImportResult {
+  row: number;
+  email: string;
+  success: boolean;
+  error?: string;
+  tempPassword?: string;
+}
 
 export default function TeachersList() {
   const [search, setSearch] = useState("");
@@ -32,7 +43,10 @@ export default function TeachersList() {
           <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
           <p className="text-muted-foreground mt-1">Manage teaching staff</p>
         </div>
-        <AddTeacherDialog />
+        <div className="flex gap-2">
+          <BulkImportTeachersDialog />
+          <AddTeacherDialog />
+        </div>
       </div>
 
       <div className="flex bg-card p-4 rounded-xl border shadow-sm">
@@ -241,6 +255,157 @@ function AddTeacherDialog() {
               <Button onClick={() => setOpen(false)}>Done</Button>
             </DialogFooter>
           </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Bulk Import Dialog ──────────────────────────────────────────────────
+
+const TEACHER_CSV_HEADERS = ["name", "email", "subjects"];
+
+function BulkImportTeachersDialog() {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<Record<string, string>[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [results, setResults] = useState<BulkImportResult[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleOpenChange = (v: boolean) => {
+    setOpen(v);
+    if (!v) {
+      setRows([]);
+      setFileName("");
+      setParseError(null);
+      setResults(null);
+    }
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setFileName(file.name);
+    setResults(null);
+    try {
+      const text = await file.text();
+      const parsed = rowsToObjects(parseCsv(text));
+      if (parsed.length === 0) {
+        setParseError("No rows found in this file.");
+        setRows([]);
+        return;
+      }
+      setParseError(null);
+      setRows(parsed);
+    } catch {
+      setParseError("Could not read this file.");
+      setRows([]);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const sample = toCsv(TEACHER_CSV_HEADERS, [["Jane Doe", "jane.doe@example.com", "Math;Science"]]);
+    downloadCsv("teachers-import-template.csv", sample);
+  };
+
+  const handleImport = async () => {
+    setImporting(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/teachers/bulk-import`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rows: rows.map((r) => ({
+            name: r.name,
+            email: r.email,
+            subjects: r.subjects ? r.subjects.split(";").map((s) => s.trim()).filter(Boolean) : [],
+          })),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast({ title: data.error || "Import failed", variant: "destructive" });
+        return;
+      }
+      setResults(data.results);
+      queryClient.invalidateQueries({ queryKey: getListTeachersQueryKey() });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const successCount = results?.filter((r) => r.success).length ?? 0;
+  const failCount = results ? results.length - successCount : 0;
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="shadow-sm"><Upload className="w-4 h-4 mr-2" /> Bulk Import</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Bulk Import Teachers</DialogTitle>
+          <DialogDescription>Upload a CSV to create many teacher accounts at once.</DialogDescription>
+        </DialogHeader>
+
+        {!results ? (
+          <div className="space-y-4 py-2">
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleDownloadTemplate}>
+              <Download className="w-3.5 h-3.5" /> Download CSV template
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Required columns: <code className="bg-muted px-1 rounded">name, email</code>. Optional:{" "}
+              <code className="bg-muted px-1 rounded">subjects</code> (semicolon-separated, e.g. "Math;Science").
+            </p>
+            <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
+            <Button variant="outline" className="w-full" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="w-4 h-4 mr-2" /> {fileName || "Choose CSV file"}
+            </Button>
+            {parseError && <p className="text-sm text-destructive">{parseError}</p>}
+            {rows.length > 0 && !parseError && (
+              <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-2">
+                {rows.length} row{rows.length === 1 ? "" : "s"} ready to import.
+              </p>
+            )}
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={handleImport} disabled={rows.length === 0 || importing}>
+                {importing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Import {rows.length > 0 ? `${rows.length} teacher${rows.length === 1 ? "" : "s"}` : ""}
+              </Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-4 py-2">
+            <div className="flex gap-3 text-sm">
+              <span className="text-green-700 font-medium">{successCount} created</span>
+              {failCount > 0 && <span className="text-red-700 font-medium">{failCount} failed</span>}
+            </div>
+            <div className="max-h-72 overflow-y-auto space-y-1.5 border rounded-lg p-2">
+              {results.map((r) => (
+                <div key={r.row} className={`text-xs p-2 rounded-md ${r.success ? "bg-green-50" : "bg-red-50"}`}>
+                  <span className="font-mono">{r.email || `Row ${r.row + 1}`}</span>
+                  {r.success ? (
+                    <span className="ml-2 text-green-700">created — temp password: <span className="font-mono font-bold">{r.tempPassword}</span></span>
+                  ) : (
+                    <span className="ml-2 text-red-700">{r.error}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Copy the temporary passwords above before closing — they won't be shown again.
+            </p>
+            <DialogFooter>
+              <Button onClick={() => setOpen(false)}>Done</Button>
+            </DialogFooter>
+          </div>
         )}
       </DialogContent>
     </Dialog>

@@ -113,6 +113,71 @@ router.post("/teachers", requireAuth, requireSchool, async (req, res): Promise<v
   });
 });
 
+// POST /teachers/bulk-import — admin only. Body: { rows: [{ name, email,
+// subjects? }] }. Same per-row error reporting as /students/bulk-import.
+router.post("/teachers/bulk-import", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { rows } = req.body;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        res.status(400).json({ error: "rows array required" });
+        return;
+      }
+      if (rows.length > 500) {
+        res.status(400).json({ error: "Max 500 rows per import" });
+        return;
+      }
+
+      const emailEnabled = await isEmailEnabledForSchool(schoolId);
+      const results: Array<{ row: number; email: string; success: boolean; error?: string; tempPassword?: string }> = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i] || {};
+        const email = String(row.email || "").trim();
+        try {
+          const { name, subjects } = row;
+          if (!name || !email) {
+            results.push({ row: i, email, success: false, error: "Missing required field(s)" });
+            continue;
+          }
+
+          const normalizedEmail = email.toLowerCase();
+          const [existingUser] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, normalizedEmail)).limit(1);
+          if (existingUser) {
+            results.push({ row: i, email, success: false, error: "Email already in use" });
+            continue;
+          }
+
+          const tempPassword = generateTempPassword();
+          const passwordHash = await hashPassword(tempPassword);
+          const [user] = await db
+            .insert(usersTable)
+            .values({ name, email: normalizedEmail, role: "teacher", passwordHash, schoolId })
+            .returning();
+          await db.insert(teachersTable).values({ userId: user.id, subjects: Array.isArray(subjects) ? subjects : [] });
+
+          if (emailEnabled) {
+            sendWelcomeEmail(user.email, user.name, tempPassword).catch((mailErr) =>
+              req.log.error(mailErr, "Bulk import welcome email failed"),
+            );
+          }
+
+          results.push({ row: i, email: normalizedEmail, success: true, tempPassword });
+        } catch (rowErr) {
+          req.log.error(rowErr);
+          results.push({ row: i, email, success: false, error: "Unexpected error" });
+        }
+      }
+
+      res.json({ results });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
 // GET /teachers/:id
 router.get("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   try {

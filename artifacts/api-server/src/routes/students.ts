@@ -151,6 +151,86 @@ router.post("/students", requireAuth, requireSchool, async (req, res): Promise<v
   });
 });
 
+// POST /students/bulk-import — admin only. Body: { rows: [{ name, email,
+// rollNo, className, section, dob?, guardianName?, guardianContact? }] }.
+// Each row is processed independently so one bad row doesn't fail the whole
+// batch; the response reports per-row success/failure and temp passwords.
+router.post("/students/bulk-import", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const schoolId = (req as any).schoolId;
+      const { rows } = req.body;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        res.status(400).json({ error: "rows array required" });
+        return;
+      }
+      if (rows.length > 500) {
+        res.status(400).json({ error: "Max 500 rows per import" });
+        return;
+      }
+
+      const emailEnabled = await isEmailEnabledForSchool(schoolId);
+      const results: Array<{ row: number; email: string; success: boolean; error?: string; tempPassword?: string }> = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i] || {};
+        const email = String(row.email || "").trim();
+        try {
+          const { name, rollNo, className, section, dob, guardianName, guardianContact } = row;
+          if (!name || !email || !rollNo || !className || !section) {
+            results.push({ row: i, email, success: false, error: "Missing required field(s)" });
+            continue;
+          }
+
+          const [cls] = await db
+            .select({ id: classesTable.id })
+            .from(classesTable)
+            .where(and(eq(classesTable.schoolId, schoolId), eq(classesTable.name, className), eq(classesTable.section, section)))
+            .limit(1);
+          if (!cls) {
+            results.push({ row: i, email, success: false, error: `Class "${className} ${section}" not found` });
+            continue;
+          }
+
+          const normalizedEmail = email.toLowerCase();
+          const [existingUser] = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.email, normalizedEmail)).limit(1);
+          if (existingUser) {
+            results.push({ row: i, email, success: false, error: "Email already in use" });
+            continue;
+          }
+
+          const tempPassword = generateTempPassword();
+          const passwordHash = await hashPassword(tempPassword);
+          const [user] = await db
+            .insert(usersTable)
+            .values({ name, email: normalizedEmail, role: "student", passwordHash, schoolId })
+            .returning();
+          await db
+            .insert(studentsTable)
+            .values({ userId: user.id, classId: cls.id, rollNo, dob: dob || null, guardianName: guardianName || null, guardianContact: guardianContact || null });
+
+          if (emailEnabled) {
+            // Fire-and-forget so one slow email doesn't stall the whole batch.
+            sendWelcomeEmail(user.email, user.name, tempPassword).catch((mailErr) =>
+              req.log.error(mailErr, "Bulk import welcome email failed"),
+            );
+          }
+
+          results.push({ row: i, email: normalizedEmail, success: true, tempPassword });
+        } catch (rowErr) {
+          req.log.error(rowErr);
+          results.push({ row: i, email, success: false, error: "Unexpected error" });
+        }
+      }
+
+      res.json({ results });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
 // GET /students/:id
 router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
   try {

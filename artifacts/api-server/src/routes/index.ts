@@ -16,6 +16,7 @@ import parentsRouter from "./parents";
 import schoolsRouter from "./schools";
 import billingRouter from "./billing";
 import certificatesRouter from "./certificates";
+import eventsRouter from "./events";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(parentsRouter);
 router.use(schoolsRouter);
 router.use(billingRouter);
 router.use(certificatesRouter);
+router.use(eventsRouter);
 
 export default router;

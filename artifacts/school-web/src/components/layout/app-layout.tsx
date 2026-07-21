@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   ShieldCheck,
-  Award
+  Award,
+  CalendarDays
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { Button } from "../ui/button";
@@ -34,6 +35,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/notices", icon: Bell, label: "Notices" },
+    { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/certificates", icon: Award, label: "Certificates" },
     { href: "/billing", icon: Wallet, label: "Billing" },
@@ -44,6 +46,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/notices", icon: Bell, label: "Notices" },
+    { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/certificates", icon: Award, label: "Certificates" },
   ],
   student: [
@@ -52,12 +55,14 @@ const navConfig = {
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
+    { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ],
   parent: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/notices", icon: Bell, label: "Notices" },
+    { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ],

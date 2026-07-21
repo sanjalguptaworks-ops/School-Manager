@@ -33,6 +33,7 @@ import MyReportCardPage from '@/pages/my-report-card/index';
 import CertificatesPage from '@/pages/certificates/index';
 import CertificateViewPage from '@/pages/certificates/view';
 import MyCertificatesPage from '@/pages/my-certificates/index';
+import EventsPage from '@/pages/events/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -170,6 +171,7 @@ function Router() {
       <Route path="/certificates"><ProtectedRoute component={CertificatesPage} /></Route>
       <Route path="/my-certificates"><ProtectedRoute component={MyCertificatesPage} /></Route>
       <Route path="/certificates/:id/view"><BareAuthRoute component={CertificateViewPage} /></Route>
+      <Route path="/events"><ProtectedRoute component={EventsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

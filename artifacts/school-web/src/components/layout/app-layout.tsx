@@ -147,29 +147,29 @@ export function AppLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground overflow-hidden print:h-auto print:overflow-visible">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block h-full">
+      <div className="hidden md:block h-full print:hidden">
         <SidebarContent />
       </div>
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile Sidebar */}
-      <div className={`fixed inset-y-0 left-0 transform ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out z-50 md:hidden`}>
+      <div className={`fixed inset-y-0 left-0 transform ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-300 ease-in-out z-50 md:hidden print:hidden`}>
         <SidebarContent />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b bg-card z-30">
+        <div className="md:hidden flex items-center justify-between p-4 border-b bg-card z-30 print:hidden">
           <div className="flex items-center gap-2 min-w-0">
             <img src={brandLogo} alt={brandName} className="w-6 h-6 rounded object-contain shrink-0" />
             <h1 className="font-bold text-lg truncate">{brandName}</h1>
@@ -179,7 +179,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </Button>
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 print:overflow-visible print:p-0">
           <div className="max-w-6xl mx-auto h-full animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
             {children}
           </div>

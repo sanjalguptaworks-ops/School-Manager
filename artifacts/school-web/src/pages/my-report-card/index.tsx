@@ -2,9 +2,10 @@ import { useAppAuth } from "@/lib/auth-context";
 import { useGetReportCard, getGetReportCardQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, Printer } from "lucide-react";
 
 export default function MyReportCardPage() {
   const { user } = useAppAuth();
@@ -32,17 +33,31 @@ export default function MyReportCardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Print-only letterhead — the app sidebar/branding is hidden when printing */}
+      <div className="hidden print:flex items-center gap-3 mb-2">
+        {user?.schoolLogoUrl && <img src={user.schoolLogoUrl} alt="" className="w-10 h-10 object-contain" />}
+        <div>
+          <p className="font-bold text-lg">{user?.schoolName || "EduCore"}</p>
+          <p className="text-sm text-muted-foreground">Report Card — {data?.student.user?.name}</p>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Report Card</h1>
           <p className="text-muted-foreground mt-1">All your exam results in one place.</p>
         </div>
-        {average != null && (
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Overall average</p>
-            <p className="text-2xl font-bold">{average}%</p>
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {average != null && (
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Overall average</p>
+              <p className="text-2xl font-bold">{average}%</p>
+            </div>
+          )}
+          <Button variant="outline" size="sm" className="gap-1.5 print:hidden" onClick={() => window.print()}>
+            <Printer className="w-3.5 h-3.5" /> Print / Save as PDF
+          </Button>
+        </div>
       </div>
 
       <Card className="shadow-sm border-border/50">

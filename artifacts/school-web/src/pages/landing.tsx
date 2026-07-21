@@ -78,8 +78,13 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 text-center text-muted-foreground text-sm border-t bg-background">
-        &copy; {new Date().getFullYear()} EduCore Inc. Crafted for education.
+      <footer className="py-8 text-center text-muted-foreground text-sm border-t bg-background space-y-3">
+        <div className="flex items-center justify-center gap-6">
+          <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
+          <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+          <Link href="/refund-policy" className="hover:text-primary transition-colors">Refunds</Link>
+        </div>
+        <p>&copy; {new Date().getFullYear()} EduCore Inc. Crafted for education.</p>
       </footer>
     </div>
   );

@@ -28,6 +28,9 @@ import ProfilePage from '@/pages/profile/index';
 import UsersPage from '@/pages/users/index';
 import BillingPage from '@/pages/billing/index';
 import CreatorSchoolsPage from '@/pages/creator/schools';
+import TermsPage from '@/pages/legal/terms';
+import PrivacyPage from '@/pages/legal/privacy';
+import RefundPolicyPage from '@/pages/legal/refund';
 
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
 import { AppLayout } from "@/components/layout/app-layout";
@@ -126,6 +129,9 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/confirm-email-change" component={ConfirmEmailChangePage} />
+      <Route path="/terms" component={TermsPage} />
+      <Route path="/privacy" component={PrivacyPage} />
+      <Route path="/refund-policy" component={RefundPolicyPage} />
 
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/students"><ProtectedRoute component={StudentsList} /></Route>

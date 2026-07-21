@@ -111,6 +111,12 @@ export default function SignupPage() {
           <Button type="submit" className="w-full" disabled={submitting}>
             {submitting ? "Submitting..." : "Sign up"}
           </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            By signing up you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-primary">Terms</Link>{" "}and{" "}
+            <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
+          </p>
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

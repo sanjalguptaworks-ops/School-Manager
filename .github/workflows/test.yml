@@ -1,0 +1,62 @@
+name: Test
+
+# Runs the api-server's integration test suite against a fresh, empty
+# Postgres service container -- never against production or the disposable
+# Neon branch used for manual verification. This is a foundation covering
+# this session's highest-value access-control patterns (role escalation,
+# teacher class-scope), not exhaustive route coverage.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      SESSION_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Push schema to the test database
+        working-directory: lib/db
+        run: pnpm exec drizzle-kit push --force --config ./drizzle.config.ts
+
+      - name: Build test bundle
+        working-directory: artifacts/api-server
+        run: node test-build.mjs
+
+      - name: Seed the test database
+        working-directory: artifacts/api-server
+        run: node .test-dist/seed.mjs
+
+      - name: Run tests
+        working-directory: artifacts/api-server
+        run: node --enable-source-maps --test .test-dist/__tests__/*.test.mjs

@@ -19,7 +19,8 @@ import {
   Award,
   CalendarDays,
   NotebookPen,
-  CalendarOff
+  CalendarOff,
+  CalendarClock
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { Button } from "../ui/button";
@@ -37,6 +38,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
@@ -50,6 +52,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
@@ -60,6 +63,7 @@ const navConfig = {
     { href: "/my-attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
@@ -70,6 +74,7 @@ const navConfig = {
   parent: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },

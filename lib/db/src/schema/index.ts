@@ -19,3 +19,4 @@ export * from "./teacher-classes";
 export * from "./events";
 export * from "./homework";
 export * from "./leave-requests";
+export * from "./timetable";

@@ -39,8 +39,17 @@ export const feePaymentsTable = pgTable(
     // than creating a new link every time, until it's actually paid.
     razorpayPaymentLinkId: text("razorpay_payment_link_id"),
     razorpayPaymentLinkUrl: text("razorpay_payment_link_url"),
+    // Installment support: null amount/dueDate means "use the fee
+    // structure's own amount/due date" (the original single-payment
+    // behavior, preserved for every pre-existing row). When a fee is split
+    // into installments, each row gets its own slice of the amount and its
+    // own staggered due date.
+    installmentNumber: integer("installment_number").notNull().default(1),
+    totalInstallments: integer("total_installments").notNull().default(1),
+    amount: numeric("amount", { precision: 10, scale: 2 }),
+    dueDate: date("due_date", { mode: "string" }),
   },
-  (t) => [unique().on(t.studentId, t.feeStructureId)],
+  (t) => [unique().on(t.studentId, t.feeStructureId, t.installmentNumber)],
 );
 
 export const insertFeePaymentSchema = createInsertSchema(feePaymentsTable).omit({

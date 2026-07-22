@@ -99,6 +99,10 @@ router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
         status: feePaymentsTable.status,
         paidOn: feePaymentsTable.paidOn,
         razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
+        installmentNumber: feePaymentsTable.installmentNumber,
+        totalInstallments: feePaymentsTable.totalInstallments,
+        amount: sql<string>`coalesce(${feePaymentsTable.amount}, ${feeStructuresTable.amount})`,
+        dueDate: sql<string>`coalesce(${feePaymentsTable.dueDate}, ${feeStructuresTable.dueDate})`,
         student: sql<any>`json_build_object('id', ${studentsTable.id}, 'rollNo', ${studentsTable.rollNo}, 'user', json_build_object('id', ${usersTable.id}, 'name', ${usersTable.name}, 'email', ${usersTable.email}, 'avatarUrl', ${usersTable.avatarUrl}))`,
         feeStructure: sql<any>`json_build_object('id', ${feeStructuresTable.id}, 'amount', ${feeStructuresTable.amount}, 'term', ${feeStructuresTable.term}, 'dueDate', ${feeStructuresTable.dueDate})`,
       })
@@ -117,13 +121,18 @@ router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
 });
 
 // POST /fee-structures/:id/generate-payments
-// Creates pending fee_payment rows for every student in the fee structure's class.
-// Skips students who already have a record for this fee structure (idempotent).
+// Creates pending fee_payment rows for every student in the fee structure's
+// class. Skips students who already have any record for this fee structure
+// (idempotent). Optional body { installments, intervalDays } splits the fee
+// into that many equal installments with due dates staggered intervalDays
+// apart (default: 1 installment, i.e. the original single-payment behavior).
 router.post("/fee-structures/:id/generate-payments", requireAuth, requireSchool, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
       const schoolId = (req as any).schoolId;
       const feeStructureId = parseInt(req.params["id"] as string);
+      const installments = Math.max(1, Math.min(12, parseInt(req.body?.installments) || 1));
+      const intervalDays = Math.max(1, parseInt(req.body?.intervalDays) || 30);
 
       // Load the fee structure, scoped to this school
       const [fs] = await db
@@ -161,9 +170,34 @@ router.post("/fee-structures/:id/generate-payments", requireAuth, requireSchool,
         .where(eq(feePaymentsTable.feeStructureId, feeStructureId));
 
       const existingIds = new Set(existing.map((e) => e.studentId));
-      const toInsert = students
-        .filter((s) => !existingIds.has(s.id))
-        .map((s) => ({ studentId: s.id, feeStructureId, status: "pending" as const }));
+      const studentsToInsert = students.filter((s) => !existingIds.has(s.id));
+
+      let toInsert: { studentId: number; feeStructureId: number; status: "pending"; installmentNumber: number; totalInstallments: number; amount?: string; dueDate?: string }[];
+
+      if (installments === 1) {
+        toInsert = studentsToInsert.map((s) => ({ studentId: s.id, feeStructureId, status: "pending" as const, installmentNumber: 1, totalInstallments: 1 }));
+      } else {
+        const total = parseFloat(fs.amount as unknown as string);
+        const baseShare = Math.floor((total / installments) * 100) / 100;
+        const lastShare = Math.round((total - baseShare * (installments - 1)) * 100) / 100;
+        const baseDate = new Date(fs.dueDate);
+
+        toInsert = studentsToInsert.flatMap((s) =>
+          Array.from({ length: installments }, (_, i) => {
+            const dueDate = new Date(baseDate);
+            dueDate.setDate(dueDate.getDate() + intervalDays * i);
+            return {
+              studentId: s.id,
+              feeStructureId,
+              status: "pending" as const,
+              installmentNumber: i + 1,
+              totalInstallments: installments,
+              amount: (i === installments - 1 ? lastShare : baseShare).toFixed(2),
+              dueDate: dueDate.toISOString().split("T")[0] as string,
+            };
+          }),
+        );
+      }
 
       if (toInsert.length > 0) {
         await db.insert(feePaymentsTable).values(toInsert);
@@ -229,8 +263,10 @@ router.post("/fee-payments/:id/pay", requireAuth, requireSchool, async (req, res
         classId: feeStructuresTable.classId,
         status: feePaymentsTable.status,
         razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
-        amount: feeStructuresTable.amount,
+        amount: sql<string>`coalesce(${feePaymentsTable.amount}, ${feeStructuresTable.amount})`,
         term: feeStructuresTable.term,
+        installmentNumber: feePaymentsTable.installmentNumber,
+        totalInstallments: feePaymentsTable.totalInstallments,
         studentName: usersTable.name,
         studentEmail: usersTable.email,
       })
@@ -280,9 +316,11 @@ router.post("/fee-payments/:id/pay", requireAuth, requireSchool, async (req, res
     const expireBy = new Date();
     expireBy.setDate(expireBy.getDate() + 30);
 
+    const installmentSuffix = payment.totalInstallments > 1 ? ` (Installment ${payment.installmentNumber} of ${payment.totalInstallments})` : "";
+
     const link = await createPaymentLink({
-      amountRupees: parseFloat(payment.amount as unknown as string),
-      description: `${payment.term} fee payment`,
+      amountRupees: parseFloat(payment.amount),
+      description: `${payment.term} fee payment${installmentSuffix}`,
       customerName: payment.studentName || "Student",
       customerEmail: payment.studentEmail,
       expireBy,

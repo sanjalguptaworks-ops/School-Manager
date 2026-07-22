@@ -39,13 +39,28 @@ import { toCsv, downloadCsv } from "@/lib/csv";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
-async function generatePayments(feeStructureId: number) {
+async function generatePayments(feeStructureId: number, installments: number, intervalDays: number) {
   const res = await fetch(`${BASE_URL}/api/fee-structures/${feeStructureId}/generate-payments`, {
     method: "POST",
     credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ installments, intervalDays }),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json() as Promise<{ created: number; skipped: number }>;
+}
+
+// The generated client's types predate installment support -- these fields
+// are real on the JSON response (see routes/fees.ts), just not yet reflected
+// in the generated types.
+function effectiveAmount(payment: any): string {
+  return payment.amount ?? payment.feeStructure?.amount;
+}
+function effectiveDueDate(payment: any): string {
+  return payment.dueDate ?? payment.feeStructure?.dueDate;
+}
+function installmentLabel(payment: any): string | null {
+  return payment.totalInstallments > 1 ? `Installment ${payment.installmentNumber} of ${payment.totalInstallments}` : null;
 }
 
 async function payFee(feePaymentId: number): Promise<{ paymentUrl: string }> {
@@ -93,6 +108,8 @@ export default function FeesPage() {
 function GeneratePaymentsDialog() {
   const [open, setOpen] = useState(false);
   const [selectedStructureId, setSelectedStructureId] = useState<string>("");
+  const [installments, setInstallments] = useState("1");
+  const [intervalDays, setIntervalDays] = useState("30");
   const [loading, setLoading] = useState(false);
   const { data: structures, isLoading } = useListFeeStructures();
   const queryClient = useQueryClient();
@@ -102,7 +119,7 @@ function GeneratePaymentsDialog() {
     if (!selectedStructureId) return;
     setLoading(true);
     try {
-      const result = await generatePayments(parseInt(selectedStructureId));
+      const result = await generatePayments(parseInt(selectedStructureId), parseInt(installments) || 1, parseInt(intervalDays) || 30);
       queryClient.invalidateQueries({ queryKey: getListFeePaymentsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetFeeOverviewQueryKey() });
       toast({
@@ -178,6 +195,25 @@ function GeneratePaymentsDialog() {
               </div>
             </div>
           )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Installments</Label>
+              <Select value={installments} onValueChange={setInstallments}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 6, 12].map((n) => (
+                    <SelectItem key={n} value={String(n)}>{n === 1 ? "1 (lump sum)" : n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Days between installments</Label>
+              <Input type="number" min={1} value={intervalDays} onChange={(e) => setIntervalDays(e.target.value)} disabled={installments === "1"} />
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -323,13 +359,14 @@ function AdminFeeTable() {
 
   const handleExport = () => {
     const csv = toCsv(
-      ["studentName", "rollNo", "term", "amount", "dueDate", "status", "paidOn"],
+      ["studentName", "rollNo", "term", "installment", "amount", "dueDate", "status", "paidOn"],
       (payments || []).map((p) => [
         p.student?.user?.name,
         p.student?.rollNo,
         p.feeStructure?.term,
-        p.feeStructure?.amount,
-        p.feeStructure?.dueDate,
+        installmentLabel(p) || "-",
+        effectiveAmount(p),
+        effectiveDueDate(p),
         p.status,
         p.paidOn,
       ]),
@@ -387,10 +424,15 @@ function AdminFeeTable() {
                     Roll {payment.student?.rollNo}
                   </div>
                 </TableCell>
-                <TableCell>{payment.feeStructure?.term}</TableCell>
-                <TableCell className="font-medium">₹{payment.feeStructure?.amount}</TableCell>
+                <TableCell>
+                  {payment.feeStructure?.term}
+                  {installmentLabel(payment) && (
+                    <div className="text-xs text-muted-foreground">{installmentLabel(payment)}</div>
+                  )}
+                </TableCell>
+                <TableCell className="font-medium">₹{effectiveAmount(payment)}</TableCell>
                 <TableCell className="text-muted-foreground">
-                  {payment.feeStructure && format(new Date(payment.feeStructure.dueDate), "MMM d, yyyy")}
+                  {format(new Date(effectiveDueDate(payment)), "MMM d, yyyy")}
                 </TableCell>
                 <TableCell>
                   {payment.status === "paid" ? (
@@ -468,10 +510,15 @@ function StudentFeeTable() {
         ) : (
           payments?.map((payment) => (
             <TableRow key={payment.id}>
-              <TableCell className="pl-6 font-medium">{payment.feeStructure?.term}</TableCell>
-              <TableCell className="font-bold">₹{payment.feeStructure?.amount}</TableCell>
+              <TableCell className="pl-6 font-medium">
+                {payment.feeStructure?.term}
+                {installmentLabel(payment) && (
+                  <div className="text-xs text-muted-foreground font-normal">{installmentLabel(payment)}</div>
+                )}
+              </TableCell>
+              <TableCell className="font-bold">₹{effectiveAmount(payment)}</TableCell>
               <TableCell className="text-muted-foreground">
-                {payment.feeStructure && format(new Date(payment.feeStructure.dueDate), "MMM d, yyyy")}
+                {format(new Date(effectiveDueDate(payment)), "MMM d, yyyy")}
               </TableCell>
               <TableCell className="text-right pr-6">
                 {payment.status === "paid" ? (

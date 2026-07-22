@@ -36,6 +36,7 @@ import MyCertificatesPage from '@/pages/my-certificates/index';
 import EventsPage from '@/pages/events/index';
 import HomeworkPage from '@/pages/homework/index';
 import IdCardViewPage from '@/pages/id-card/view';
+import LeaveRequestsPage from '@/pages/leave-requests/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -176,6 +177,7 @@ function Router() {
       <Route path="/events"><ProtectedRoute component={EventsPage} /></Route>
       <Route path="/homework"><ProtectedRoute component={HomeworkPage} /></Route>
       <Route path="/id-card/:type/:id"><BareAuthRoute component={IdCardViewPage} /></Route>
+      <Route path="/leave-requests"><ProtectedRoute component={LeaveRequestsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

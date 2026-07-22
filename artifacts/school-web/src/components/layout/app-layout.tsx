@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   Award,
   CalendarDays,
-  NotebookPen
+  NotebookPen,
+  CalendarOff
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { Button } from "../ui/button";
@@ -36,6 +37,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
@@ -48,6 +50,7 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/certificates", icon: Award, label: "Certificates" },
@@ -57,6 +60,7 @@ const navConfig = {
     { href: "/my-attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },

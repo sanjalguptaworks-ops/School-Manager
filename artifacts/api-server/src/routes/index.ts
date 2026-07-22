@@ -18,6 +18,7 @@ import billingRouter from "./billing";
 import certificatesRouter from "./certificates";
 import eventsRouter from "./events";
 import homeworkRouter from "./homework";
+import leaveRequestsRouter from "./leave-requests";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(billingRouter);
 router.use(certificatesRouter);
 router.use(eventsRouter);
 router.use(homeworkRouter);
+router.use(leaveRequestsRouter);
 
 export default router;

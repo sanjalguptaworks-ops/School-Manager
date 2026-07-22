@@ -20,6 +20,7 @@ import eventsRouter from "./events";
 import homeworkRouter from "./homework";
 import leaveRequestsRouter from "./leave-requests";
 import timetableRouter from "./timetable";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(eventsRouter);
 router.use(homeworkRouter);
 router.use(leaveRequestsRouter);
 router.use(timetableRouter);
+router.use(notificationsRouter);
 
 export default router;

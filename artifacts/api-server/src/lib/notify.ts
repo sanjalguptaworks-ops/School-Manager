@@ -1,5 +1,5 @@
-import { db, usersTable, studentsTable, parentStudentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, usersTable, studentsTable, parentStudentsTable, notificationsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import { sendBulkNotificationEmail } from "./mailer";
 import { sendBulkSms } from "./sms";
 import { isEmailEnabledForSchool, isSmsEnabledForSchool } from "./school-settings";
@@ -7,6 +7,7 @@ import { isEmailEnabledForSchool, isSmsEnabledForSchool } from "./school-setting
 const APP_NAME = "EduCore";
 
 interface Contact {
+  userId: number;
   email: string;
   phone: string | null;
 }
@@ -15,39 +16,42 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-async function getRecipientsByRole(role: "student" | "parent" | "teacher" | "admin"): Promise<Contact[]> {
-  return db.select({ email: usersTable.email, phone: usersTable.phone }).from(usersTable).where(eq(usersTable.role, role));
+async function getRecipientsByRole(role: "student" | "parent" | "teacher" | "admin", schoolId: number): Promise<Contact[]> {
+  return db
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
+    .from(usersTable)
+    .where(and(eq(usersTable.role, role), eq(usersTable.schoolId, schoolId)));
 }
 
-async function getAllRecipients(): Promise<Contact[]> {
-  return db.select({ email: usersTable.email, phone: usersTable.phone }).from(usersTable);
+async function getAllRecipients(schoolId: number): Promise<Contact[]> {
+  return db.select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone }).from(usersTable).where(eq(usersTable.schoolId, schoolId));
 }
 
 // Every student + every parent linked to a student, in one class.
 async function getClassRecipients(classId: number): Promise<Contact[]> {
-  const byEmail = new Map<string, Contact>();
+  const byUserId = new Map<number, Contact>();
 
   const studentRows = await db
-    .select({ email: usersTable.email, phone: usersTable.phone })
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
     .from(studentsTable)
     .innerJoin(usersTable, eq(studentsTable.userId, usersTable.id))
     .where(eq(studentsTable.classId, classId));
-  studentRows.forEach((r) => byEmail.set(r.email, r));
+  studentRows.forEach((r) => byUserId.set(r.userId, r));
 
   const parentRows = await db
-    .select({ email: usersTable.email, phone: usersTable.phone })
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
     .from(parentStudentsTable)
     .innerJoin(studentsTable, eq(parentStudentsTable.studentId, studentsTable.id))
     .innerJoin(usersTable, eq(parentStudentsTable.parentId, usersTable.id))
     .where(eq(studentsTable.classId, classId));
-  parentRows.forEach((r) => byEmail.set(r.email, r));
+  parentRows.forEach((r) => byUserId.set(r.userId, r));
 
-  return Array.from(byEmail.values());
+  return Array.from(byUserId.values());
 }
 
 async function getClassStudentRecipients(classId: number): Promise<Contact[]> {
   return db
-    .select({ email: usersTable.email, phone: usersTable.phone })
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
     .from(studentsTable)
     .innerJoin(usersTable, eq(studentsTable.userId, usersTable.id))
     .where(eq(studentsTable.classId, classId));
@@ -55,14 +59,14 @@ async function getClassStudentRecipients(classId: number): Promise<Contact[]> {
 
 async function getClassParentRecipients(classId: number): Promise<Contact[]> {
   return db
-    .select({ email: usersTable.email, phone: usersTable.phone })
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
     .from(parentStudentsTable)
     .innerJoin(studentsTable, eq(parentStudentsTable.studentId, studentsTable.id))
     .innerJoin(usersTable, eq(parentStudentsTable.parentId, usersTable.id))
     .where(eq(studentsTable.classId, classId));
 }
 
-async function resolveNoticeRecipients(targetRole: string, classId: number | null): Promise<Contact[]> {
+async function resolveNoticeRecipients(targetRole: string, classId: number | null, schoolId: number): Promise<Contact[]> {
   if (classId) {
     if (targetRole === "students") return getClassStudentRecipients(classId);
     if (targetRole === "parents") return getClassParentRecipients(classId);
@@ -73,22 +77,31 @@ async function resolveNoticeRecipients(targetRole: string, classId: number | nul
 
   switch (targetRole) {
     case "students":
-      return getRecipientsByRole("student");
+      return getRecipientsByRole("student", schoolId);
     case "parents":
-      return getRecipientsByRole("parent");
+      return getRecipientsByRole("parent", schoolId);
     case "teachers":
-      return getRecipientsByRole("teacher");
+      return getRecipientsByRole("teacher", schoolId);
     case "admin":
-      return getRecipientsByRole("admin");
+      return getRecipientsByRole("admin", schoolId);
     default:
-      return getAllRecipients();
+      return getAllRecipients(schoolId);
   }
 }
 
-// Sends email (if the school has it enabled) and SMS (if the school has
-// opted in and a provider is configured -- see lib/sms.ts) to the same
-// contact list.
-async function dispatch(schoolId: number, contacts: Contact[], subject: string, text: string, html: string, smsBody: string): Promise<void> {
+// Sends email (if the school has it enabled), SMS (if the school has opted
+// in and a provider is configured -- see lib/sms.ts), and always writes an
+// in-app notification row (the bell-icon feed isn't gated by either toggle,
+// since it costs nothing and isn't an external channel).
+async function dispatch(
+  schoolId: number,
+  contacts: Contact[],
+  subject: string,
+  text: string,
+  html: string,
+  smsBody: string,
+  inApp: { title: string; body: string; link?: string },
+): Promise<void> {
   const [emailEnabled, smsEnabled] = await Promise.all([isEmailEnabledForSchool(schoolId), isSmsEnabledForSchool(schoolId)]);
 
   if (emailEnabled) {
@@ -99,6 +112,18 @@ async function dispatch(schoolId: number, contacts: Contact[], subject: string, 
   if (smsEnabled) {
     const phones = contacts.filter((c): c is Contact & { phone: string } => !!c.phone).map((c) => c.phone);
     if (phones.length > 0) await sendBulkSms(phones, smsBody);
+  }
+
+  if (contacts.length > 0) {
+    await db.insert(notificationsTable).values(
+      contacts.map((c) => ({
+        userId: c.userId,
+        title: inApp.title,
+        body: inApp.body,
+        link: inApp.link ?? null,
+        schoolId,
+      })),
+    );
   }
 }
 
@@ -116,7 +141,7 @@ export async function notifyNewNotice(
   schoolId: number,
 ): Promise<void> {
   try {
-    const contacts = await resolveNoticeRecipients(notice.targetRole, notice.classId);
+    const contacts = await resolveNoticeRecipients(notice.targetRole, notice.classId, schoolId);
     if (contacts.length === 0) return;
 
     const text = `${notice.title}\n\n${notice.body}\n\n— ${APP_NAME}`;
@@ -126,7 +151,11 @@ export async function notifyNewNotice(
     )}</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
     const smsBody = `${APP_NAME}: ${notice.title} - ${notice.body}`.slice(0, 300);
 
-    await dispatch(schoolId, contacts, `New notice: ${notice.title}`, text, html, smsBody);
+    await dispatch(schoolId, contacts, `New notice: ${notice.title}`, text, html, smsBody, {
+      title: notice.title,
+      body: notice.body,
+      link: "/notices",
+    });
   } catch (err) {
     console.error("Failed to send notice notifications", err);
   }
@@ -155,7 +184,11 @@ export async function notifyNewExam(
     }</li></ul><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
     const smsBody = `${APP_NAME}: New exam - ${exam.subject} (${exam.name}) on ${exam.date}.`;
 
-    await dispatch(schoolId, contacts, subjectLine, text, html, smsBody);
+    await dispatch(schoolId, contacts, subjectLine, text, html, smsBody, {
+      title: `New exam: ${exam.subject}`,
+      body: `${exam.name} on ${exam.date}`,
+      link: "/exams",
+    });
   } catch (err) {
     console.error("Failed to send exam notifications", err);
   }
@@ -183,8 +216,32 @@ export async function notifyFeeDue(
     }</li></ul><p>Please log in to EduCore to view details.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
     const smsBody = `${APP_NAME}: Fee due - ${fs.term} ₹${fs.amount}, due ${fs.dueDate}.`;
 
-    await dispatch(schoolId, contacts, subjectLine, text, html, smsBody);
+    await dispatch(schoolId, contacts, subjectLine, text, html, smsBody, {
+      title: `Fee due: ${fs.term}`,
+      body: `₹${fs.amount}, due ${fs.dueDate}`,
+      link: "/fees",
+    });
   } catch (err) {
     console.error("Failed to send fee notifications", err);
+  }
+}
+
+// In-app-only (no email/SMS) — the requester already sees the outcome the
+// moment they reload the page, but a bell-icon ping is a nice-to-have for
+// something they were actively waiting on.
+export async function notifyLeaveRequestReviewed(
+  leaveRequest: { requestedBy: number; status: "approved" | "rejected"; startDate: string; endDate: string },
+  schoolId: number,
+): Promise<void> {
+  try {
+    await db.insert(notificationsTable).values({
+      userId: leaveRequest.requestedBy,
+      title: `Leave request ${leaveRequest.status}`,
+      body: `Your leave request for ${leaveRequest.startDate} to ${leaveRequest.endDate} was ${leaveRequest.status}.`,
+      link: "/leave-requests",
+      schoolId,
+    });
+  } catch (err) {
+    console.error("Failed to write leave-request-reviewed notification", err);
   }
 }

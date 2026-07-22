@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, leaveRequestsTable, usersTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
+import { notifyLeaveRequestReviewed } from "../lib/notify";
 
 const router = Router();
 
@@ -107,6 +108,13 @@ router.patch("/leave-requests/:id", requireAuth, requireSchool, async (req, res)
         .set({ status, reviewedBy: authUserId, reviewedAt: new Date() })
         .where(eq(leaveRequestsTable.id, id))
         .returning();
+
+      if (updated) {
+        notifyLeaveRequestReviewed(
+          { requestedBy: updated.requestedBy, status: updated.status as "approved" | "rejected", startDate: updated.startDate, endDate: updated.endDate },
+          schoolId,
+        );
+      }
 
       res.json(updated);
     } catch (err) {

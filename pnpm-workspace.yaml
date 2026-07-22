@@ -36,6 +36,7 @@ minimumReleaseAgeExclude:
 
 packages:
   - artifacts/*
+  - '!artifacts/educore-video'
   - lib/*
   - lib/integrations/*
   - scripts

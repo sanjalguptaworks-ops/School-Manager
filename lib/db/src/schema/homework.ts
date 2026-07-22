@@ -34,6 +34,10 @@ export const homeworkCompletionsTable = pgTable(
       .notNull()
       .references(() => studentsTable.id, { onDelete: "cascade" }),
     completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
+    // A photo of the completed work, uploaded from the browser directly to
+    // Cloudinary (see lib/upload-image.ts) -- optional, since some homework
+    // doesn't produce a physical artifact worth photographing.
+    submissionUrl: text("submission_url"),
   },
   (t) => [unique().on(t.homeworkId, t.studentId)]
 );

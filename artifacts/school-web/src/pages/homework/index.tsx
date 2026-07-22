@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useAppAuth } from "@/lib/auth-context";
 import { useListClasses } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,8 +17,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Paperclip, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Paperclip, Plus, Trash2, Camera, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import { uploadHomeworkSubmission, UploadConfigError } from "@/lib/upload-image";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -31,6 +32,7 @@ interface Homework {
   attachmentUrl: string | null;
   class: { id: number; name: string; section: string };
   completed: boolean;
+  submissionUrl: string | null;
   completedCount: number;
 }
 
@@ -81,6 +83,52 @@ export default function HomeworkPage() {
     await load();
   };
 
+  const [uploadingId, setUploadingId] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef<Homework | null>(null);
+
+  const handleAttachClick = (hw: Homework) => {
+    uploadTargetRef.current = hw;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const hw = uploadTargetRef.current;
+    if (!file || !hw) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please choose an image file", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Image is too large (max 5MB)", variant: "destructive" });
+      return;
+    }
+
+    setUploadingId(hw.id);
+    try {
+      const submissionUrl = await uploadHomeworkSubmission(file);
+      const res = await fetch(`${BASE_URL}/api/homework/${hw.id}/complete`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionUrl }),
+      });
+      if (!res.ok && res.status !== 204) {
+        toast({ title: "Failed to attach photo", variant: "destructive" });
+        return;
+      }
+      toast({ title: "Photo attached" });
+      await load();
+    } catch (err) {
+      toast({ title: err instanceof UploadConfigError ? err.message : "Upload failed", variant: "destructive" });
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   return (
@@ -94,6 +142,8 @@ export default function HomeworkPage() {
         </div>
         {canManage && <AddHomeworkDialog onCreated={load} />}
       </div>
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {canManage && (
         <Select value={classFilter} onValueChange={setClassFilter}>
@@ -161,6 +211,26 @@ export default function HomeworkPage() {
                       )}
                       {canManage && (
                         <p className="text-xs text-muted-foreground">{hw.completedCount} student(s) completed</p>
+                      )}
+                      {user?.role === "student" && hw.submissionUrl && (
+                        <a
+                          href={hw.submissionUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary flex items-center gap-1 hover:underline"
+                        >
+                          <ImageIcon className="w-3 h-3" /> View your submission
+                        </a>
+                      )}
+                      {user?.role === "student" && !hw.submissionUrl && (
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground flex items-center gap-1 hover:text-primary disabled:opacity-50"
+                          onClick={() => handleAttachClick(hw)}
+                          disabled={uploadingId === hw.id}
+                        >
+                          <Camera className="w-3 h-3" /> {uploadingId === hw.id ? "Uploading..." : "Attach photo"}
+                        </button>
                       )}
                     </div>
                   </div>

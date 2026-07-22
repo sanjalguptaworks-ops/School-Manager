@@ -86,6 +86,7 @@ router.get("/homework", requireAuth, requireSchool, async (req, res): Promise<vo
         createdAt: homeworkTable.createdAt,
         class: { id: classesTable.id, name: classesTable.name, section: classesTable.section },
         completed: completionStudentId ? sql<boolean>`${homeworkCompletionsTable.id} is not null` : sql<boolean>`false`,
+        submissionUrl: homeworkCompletionsTable.submissionUrl,
         completedCount: sql<number>`(select count(*)::int from homework_completions hc where hc.homework_id = ${homeworkTable.id})`,
       })
       .from(homeworkTable)
@@ -179,6 +180,8 @@ router.post("/homework/:id/complete", requireAuth, requireSchool, async (req, re
       const schoolId = (req as any).schoolId;
       const authUserId = (req as any).authUserId;
 
+      const { submissionUrl } = req.body || {};
+
       const ownId = await getOwnStudentId(authUserId);
       if (!ownId) { res.status(403).json({ error: "Forbidden" }); return; }
 
@@ -190,10 +193,15 @@ router.post("/homework/:id/complete", requireAuth, requireSchool, async (req, re
         .limit(1);
       if (!hw || !s || hw.classId !== s.classId) { res.status(404).json({ error: "Not found" }); return; }
 
+      // onConflictDoUpdate (rather than doNothing) so a student can attach
+      // or replace their submission photo after already marking complete.
       await db
         .insert(homeworkCompletionsTable)
-        .values({ homeworkId: id, studentId: ownId })
-        .onConflictDoNothing();
+        .values({ homeworkId: id, studentId: ownId, submissionUrl: submissionUrl || null })
+        .onConflictDoUpdate({
+          target: [homeworkCompletionsTable.homeworkId, homeworkCompletionsTable.studentId],
+          set: { submissionUrl: submissionUrl || null },
+        });
 
       res.status(204).send();
     } catch (err) {

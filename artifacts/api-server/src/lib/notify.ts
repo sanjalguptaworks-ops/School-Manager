@@ -245,3 +245,23 @@ export async function notifyLeaveRequestReviewed(
     console.error("Failed to write leave-request-reviewed notification", err);
   }
 }
+
+// In-app-only, same reasoning as notifyLeaveRequestReviewed -- a real-time
+// chat message doesn't need an email/SMS blast, just a bell-icon ping for
+// the other participant.
+export async function notifyNewMessage(
+  message: { conversationId: number; recipientUserId: number; senderName: string; body: string },
+  schoolId: number,
+): Promise<void> {
+  try {
+    await db.insert(notificationsTable).values({
+      userId: message.recipientUserId,
+      title: `New message from ${message.senderName}`,
+      body: message.body.slice(0, 140),
+      link: `/messages/${message.conversationId}`,
+      schoolId,
+    });
+  } catch (err) {
+    console.error("Failed to write new-message notification", err);
+  }
+}

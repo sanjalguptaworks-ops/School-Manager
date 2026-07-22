@@ -23,6 +23,7 @@ import timetableRouter from "./timetable";
 import notificationsRouter from "./notifications";
 import disciplineRouter from "./discipline";
 import analyticsRouter from "./analytics";
+import messagingRouter from "./messaging";
 
 const router: IRouter = Router();
 
@@ -50,5 +51,6 @@ router.use(timetableRouter);
 router.use(notificationsRouter);
 router.use(disciplineRouter);
 router.use(analyticsRouter);
+router.use(messagingRouter);
 
 export default router;

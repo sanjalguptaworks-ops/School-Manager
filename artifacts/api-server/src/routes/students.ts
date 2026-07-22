@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, studentsTable, usersTable, classesTable, attendanceTable, feePaymentsTable, marksTable, examsTable } from "@workspace/db";
+import { db, studentsTable, usersTable, classesTable, attendanceTable, feePaymentsTable, marksTable, examsTable, parentStudentsTable } from "@workspace/db";
 import { eq, and, sql, gte, desc, asc, inArray } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { hashPassword, generateTempPassword } from "../lib/password";
@@ -262,6 +262,41 @@ router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
     req.log.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// GET /students/:id/parents — admin/teacher (class-scoped) only. Supports a
+// teacher starting a parent-teacher conversation about this student without
+// already knowing the parent's account.
+router.get("/students/:id/parents", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin", "teacher"], req, res, async () => {
+    try {
+      const id = parseInt(req.params["id"] as string);
+      const schoolId = (req as any).schoolId;
+      const authUserId = (req as any).authUserId;
+
+      const [student] = await db
+        .select({ classId: studentsTable.classId })
+        .from(studentsTable)
+        .innerJoin(classesTable, eq(studentsTable.classId, classesTable.id))
+        .where(and(eq(studentsTable.id, id), eq(classesTable.schoolId, schoolId)))
+        .limit(1);
+      if (!student) { res.status(404).json({ error: "Not found" }); return; }
+
+      const classScope = await getTeacherClassScope(authUserId);
+      if (!canAccessClass(classScope, student.classId)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+      const parents = await db
+        .select({ id: usersTable.id, name: usersTable.name, email: usersTable.email })
+        .from(parentStudentsTable)
+        .innerJoin(usersTable, eq(parentStudentsTable.parentId, usersTable.id))
+        .where(eq(parentStudentsTable.studentId, id));
+
+      res.json(parents);
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 });
 
 // GET /students/:id/summary — dashboard card data for a single student:

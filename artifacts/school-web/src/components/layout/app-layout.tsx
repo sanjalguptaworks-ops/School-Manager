@@ -22,7 +22,8 @@ import {
   CalendarOff,
   CalendarClock,
   ShieldAlert,
-  LineChart
+  LineChart,
+  MessageSquare
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
@@ -60,6 +61,7 @@ const navConfig = {
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
+    { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/certificates", icon: Award, label: "Certificates" },
@@ -82,6 +84,7 @@ const navConfig = {
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
+    { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
     { href: "/fees", icon: CreditCard, label: "Fees" },

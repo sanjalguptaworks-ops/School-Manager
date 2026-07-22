@@ -39,6 +39,7 @@ import IdCardViewPage from '@/pages/id-card/view';
 import LeaveRequestsPage from '@/pages/leave-requests/index';
 import TimetablePage from '@/pages/timetable/index';
 import DisciplinePage from '@/pages/discipline/index';
+import AnalyticsPage from '@/pages/analytics/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -182,6 +183,7 @@ function Router() {
       <Route path="/leave-requests"><ProtectedRoute component={LeaveRequestsPage} /></Route>
       <Route path="/timetable"><ProtectedRoute component={TimetablePage} /></Route>
       <Route path="/discipline"><ProtectedRoute component={DisciplinePage} /></Route>
+      <Route path="/analytics"><ProtectedRoute component={AnalyticsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

@@ -2,7 +2,7 @@ import { useGetStudent, useUpdateStudent, useGetReportCard, useGetAttendanceSumm
 import { useParams } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarCheck, BookOpen, UserCircle, GraduationCap, Phone, Mail, FileText, ChevronLeft, Calendar as CalIcon } from "lucide-react";
+import { CalendarCheck, BookOpen, UserCircle, GraduationCap, Phone, Mail, FileText, ChevronLeft, Calendar as CalIcon, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { format } from "date-fns";
@@ -35,20 +35,29 @@ export default function StudentDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link href="/students"><ChevronLeft className="w-5 h-5" /></Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{student.user?.name}</h1>
-          <p className="text-muted-foreground flex items-center gap-2 mt-1">
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-              {student.class?.name} {student.class?.section}
-            </span>
-            <span>•</span>
-            <span>Roll No: {student.rollNo}</span>
-          </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link href="/students"><ChevronLeft className="w-5 h-5" /></Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{student.user?.name}</h1>
+            <p className="text-muted-foreground flex items-center gap-2 mt-1">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                {student.class?.name} {student.class?.section}
+              </span>
+              <span>•</span>
+              <span>Roll No: {student.rollNo}</span>
+            </p>
+          </div>
         </div>
+        {(user?.role === 'admin' || user?.role === 'teacher') && (
+          <Button variant="outline" size="sm" className="gap-1.5" asChild>
+            <Link href={`/id-card/student/${student.id}`} target="_blank">
+              <IdCard className="w-4 h-4" /> Print ID Card
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

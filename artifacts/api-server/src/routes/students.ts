@@ -231,11 +231,21 @@ router.post("/students/bulk-import", requireAuth, requireSchool, async (req, res
   });
 });
 
-// GET /students/:id
+// GET /students/:id — staff see any student in their school; a student or
+// parent only their own/linked record (same access model as /summary,
+// otherwise any authenticated student could pass an arbitrary id and read
+// another family's phone/dob/guardian contact).
 router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+
+    const scope = await getStudentAccessScope(authUserId);
+    if (!canAccessStudent(scope, id)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const student = await getStudentWithRelations(id, schoolId);
     if (!student) return res.status(404).json({ error: "Not found" });
     return res.json(student);

@@ -179,12 +179,23 @@ router.post("/teachers/bulk-import", requireAuth, requireSchool, async (req, res
 });
 
 // GET /teachers/:id
+// Admin sees any teacher in the school; a teacher only their own record --
+// otherwise any authenticated student/parent could pass an arbitrary teacher
+// id and read their phone number/email.
 router.get("/teachers/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
     const schoolId = (req as any).schoolId;
+    const authUserId = (req as any).authUserId;
+
+    const [requester] = await db.select({ role: usersTable.role }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
     const teacher = await getTeacherWithUser(id, schoolId);
     if (!teacher) return res.status(404).json({ error: "Not found" });
+
+    if (requester?.role !== "admin" && teacher.userId !== authUserId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     return res.json(teacher);
   } catch (err) {
     req.log.error(err);

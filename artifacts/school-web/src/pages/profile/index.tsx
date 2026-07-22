@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useAppAuth } from "@/lib/auth-context";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { uploadProfilePicture } from "@/lib/upload-image";
-import { Mail, Phone, Clock, LogOut, ShieldCheck, Pencil, X, Camera } from "lucide-react";
+import { Mail, Phone, Clock, LogOut, ShieldCheck, Pencil, X, Camera, IdCard } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -228,6 +228,16 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+
+              {((user.role === "student" && user.studentId) || (user.role === "teacher" && user.teacherId)) && (
+                <div className="mt-8 pt-8 border-t border-border/50">
+                  <Button variant="outline" asChild>
+                    <Link href={`/id-card/${user.role}/${user.role === "student" ? user.studentId : user.teacherId}`} target="_blank">
+                      <IdCard className="w-4 h-4 mr-2" /> View / Print ID Card
+                    </Link>
+                  </Button>
+                </div>
+              )}
 
               <div className="mt-8 pt-8 border-t border-border/50">
                 <Button

@@ -2,7 +2,7 @@ import { useGetTeacher, useUpdateTeacher, useListClasses, getGetTeacherQueryKey 
 import { useParams, Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, Mail, BookOpen, GraduationCap, X } from "lucide-react";
+import { ChevronLeft, Mail, BookOpen, GraduationCap, X, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,14 +31,21 @@ export default function TeacherDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild className="rounded-full">
-          <Link href="/teachers"><ChevronLeft className="w-5 h-5" /></Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{teacher.user?.name}</h1>
-          <p className="text-muted-foreground mt-1">Teacher Profile</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link href="/teachers"><ChevronLeft className="w-5 h-5" /></Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{teacher.user?.name}</h1>
+            <p className="text-muted-foreground mt-1">Teacher Profile</p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" className="gap-1.5" asChild>
+          <Link href={`/id-card/teacher/${teacher.id}`} target="_blank">
+            <IdCard className="w-4 h-4" /> Print ID Card
+          </Link>
+        </Button>
       </div>
 
       <Card className="max-w-2xl shadow-sm border-border/50">

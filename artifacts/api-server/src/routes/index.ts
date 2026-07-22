@@ -24,6 +24,7 @@ import notificationsRouter from "./notifications";
 import disciplineRouter from "./discipline";
 import analyticsRouter from "./analytics";
 import messagingRouter from "./messaging";
+import admissionsRouter from "./admissions";
 
 const router: IRouter = Router();
 
@@ -52,5 +53,6 @@ router.use(notificationsRouter);
 router.use(disciplineRouter);
 router.use(analyticsRouter);
 router.use(messagingRouter);
+router.use(admissionsRouter);
 
 export default router;

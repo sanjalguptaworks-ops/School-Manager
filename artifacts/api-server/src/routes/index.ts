@@ -21,6 +21,7 @@ import homeworkRouter from "./homework";
 import leaveRequestsRouter from "./leave-requests";
 import timetableRouter from "./timetable";
 import notificationsRouter from "./notifications";
+import disciplineRouter from "./discipline";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(homeworkRouter);
 router.use(leaveRequestsRouter);
 router.use(timetableRouter);
 router.use(notificationsRouter);
+router.use(disciplineRouter);
 
 export default router;

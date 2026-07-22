@@ -21,3 +21,4 @@ export * from "./homework";
 export * from "./leave-requests";
 export * from "./timetable";
 export * from "./notifications";
+export * from "./discipline";

@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { CalendarOff, Check, Plus, X } from "lucide-react";
+import { CalendarOff, Check, Plus, X, Users } from "lucide-react";
 import { format } from "date-fns";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
@@ -29,6 +29,14 @@ interface LeaveRequest {
   status: "pending" | "approved" | "rejected";
   createdAt: string;
   requester?: { id: number; name: string; role: string };
+}
+
+interface SubstituteSuggestion {
+  dayOfWeek: string;
+  periodNumber: number;
+  subject: string;
+  class: string;
+  freeTeachers: { id: number; name: string }[];
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -150,6 +158,9 @@ export default function LeaveRequestsPage() {
                       </Button>
                     </>
                   )}
+                  {isAdmin && lr.status === "approved" && lr.requester?.role === "teacher" && (
+                    <SubstituteSuggestionsDialog leaveRequestId={lr.id} teacherName={lr.requester.name} />
+                  )}
                   {!isAdmin && lr.status === "pending" && (
                     <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => handleCancel(lr.id)}>
                       Cancel
@@ -162,6 +173,64 @@ export default function LeaveRequestsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function SubstituteSuggestionsDialog({ leaveRequestId, teacherName }: { leaveRequestId: number; teacherName: string }) {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
+
+  const handleOpenChange = async (next: boolean) => {
+    setOpen(next);
+    if (!next) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/leave-requests/${leaveRequestId}/substitute-suggestions`, { credentials: "include" });
+      const data = await res.json().catch(() => []);
+      if (res.ok) setSuggestions(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1">
+          <Users className="w-3.5 h-3.5" /> Find Substitutes
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Substitute Suggestions</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          {teacherName}'s periods during this leave, and which other teachers are free at that time.
+        </p>
+        {loading ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Loading...</p>
+        ) : suggestions.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">No timetable periods fall within this leave range.</p>
+        ) : (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {suggestions.map((s, i) => (
+              <div key={i} className="border rounded-lg p-3">
+                <p className="text-sm font-medium capitalize">{s.dayOfWeek} &middot; Period {s.periodNumber}</p>
+                <p className="text-xs text-muted-foreground">{s.subject} &middot; {s.class}</p>
+                <p className="text-xs mt-1.5">
+                  {s.freeTeachers.length === 0 ? (
+                    <span className="text-destructive">No free teachers found</span>
+                  ) : (
+                    <span>Free: {s.freeTeachers.map((t) => t.name).join(", ")}</span>
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -128,4 +128,43 @@ router.delete("/classes/:id", requireAuth, requireSchool, async (req, res): Prom
   });
 });
 
+// POST /classes/:id/promote-students — admin only. Bulk-moves every student
+// currently in this class into targetClassId (e.g. year-end promotion),
+// instead of editing each student one at a time.
+router.post("/classes/:id/promote-students", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  await requireRole(["admin"], req, res, async () => {
+    try {
+      const sourceClassId = parseInt(req.params["id"] as string);
+      const schoolId = (req as any).schoolId;
+      const { targetClassId } = req.body;
+
+      if (!targetClassId) {
+        res.status(400).json({ error: "targetClassId is required" });
+        return;
+      }
+      if (targetClassId === sourceClassId) {
+        res.status(400).json({ error: "targetClassId must be different from the source class" });
+        return;
+      }
+
+      const [source] = await db.select({ id: classesTable.id }).from(classesTable).where(and(eq(classesTable.id, sourceClassId), eq(classesTable.schoolId, schoolId))).limit(1);
+      if (!source) { res.status(404).json({ error: "Source class not found" }); return; }
+
+      const [target] = await db.select({ id: classesTable.id }).from(classesTable).where(and(eq(classesTable.id, targetClassId), eq(classesTable.schoolId, schoolId))).limit(1);
+      if (!target) { res.status(400).json({ error: "Invalid targetClassId" }); return; }
+
+      const moved = await db
+        .update(studentsTable)
+        .set({ classId: targetClassId })
+        .where(eq(studentsTable.classId, sourceClassId))
+        .returning({ id: studentsTable.id });
+
+      res.json({ promoted: moved.length });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+});
+
 export default router;

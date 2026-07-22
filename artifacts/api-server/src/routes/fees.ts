@@ -4,6 +4,7 @@ import { eq, and, inArray, sql } from "drizzle-orm";
 import { requireAuth, requireSchool, requireRole } from "../middlewares/auth";
 import { notifyFeeDue } from "../lib/notify";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
+import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 import { createPaymentLink } from "../lib/razorpay";
 
 const router = Router();
@@ -225,6 +226,7 @@ router.post("/fee-payments/:id/pay", requireAuth, requireSchool, async (req, res
       .select({
         id: feePaymentsTable.id,
         studentId: feePaymentsTable.studentId,
+        classId: feeStructuresTable.classId,
         status: feePaymentsTable.status,
         razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
         amount: feeStructuresTable.amount,
@@ -247,6 +249,15 @@ router.post("/fee-payments/:id/pay", requireAuth, requireSchool, async (req, res
 
     const scope = await getStudentAccessScope(authUserId);
     if (!canAccessStudent(scope, payment.studentId)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
+    // A teacher scoped to specific classes shouldn't be able to generate a
+    // payment link for a student outside their assigned classes just by
+    // hitting this endpoint directly.
+    const classScope = await getTeacherClassScope(authUserId);
+    if (!canAccessClass(classScope, payment.classId)) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }

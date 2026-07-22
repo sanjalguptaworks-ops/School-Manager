@@ -234,7 +234,10 @@ router.post("/students/bulk-import", requireAuth, requireSchool, async (req, res
 // GET /students/:id — staff see any student in their school; a student or
 // parent only their own/linked record (same access model as /summary,
 // otherwise any authenticated student could pass an arbitrary id and read
-// another family's phone/dob/guardian contact).
+// another family's phone/dob/guardian contact). A teacher scoped to specific
+// classes is further restricted to students in those classes -- otherwise
+// they could bypass that restriction just by requesting a student directly
+// by id instead of going through the (correctly scoped) list endpoint.
 router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
   try {
     const id = parseInt(req.params['id'] as string);
@@ -248,6 +251,12 @@ router.get("/students/:id", requireAuth, requireSchool, async (req, res) => {
 
     const student = await getStudentWithRelations(id, schoolId);
     if (!student) return res.status(404).json({ error: "Not found" });
+
+    const classScope = await getTeacherClassScope(authUserId);
+    if (!canAccessClass(classScope, student.classId)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     return res.json(student);
   } catch (err) {
     req.log.error(err);

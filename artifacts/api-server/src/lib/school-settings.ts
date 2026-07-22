@@ -51,3 +51,17 @@ export async function isEmailEnabledForSchool(schoolId: number): Promise<boolean
     .limit(1);
   return school?.emailEnabled ?? true;
 }
+
+/**
+ * Whether the given school has opted in to SMS notifications. Unlike email,
+ * this defaults to false if the school row can't be found -- matching the
+ * column's own opt-in default, since SMS costs money per message.
+ */
+export async function isSmsEnabledForSchool(schoolId: number): Promise<boolean> {
+  const [school] = await db
+    .select({ smsEnabled: schoolsTable.smsEnabled })
+    .from(schoolsTable)
+    .where(eq(schoolsTable.id, schoolId))
+    .limit(1);
+  return school?.smsEnabled ?? false;
+}

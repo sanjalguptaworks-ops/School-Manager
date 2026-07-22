@@ -440,12 +440,12 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
               </div>
               <Switch checked={emailEnabled} onCheckedChange={setEmailEnabled} />
             </div>
-            <div className="flex items-center justify-between opacity-60">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">SMS</p>
-                <p className="text-xs text-muted-foreground">Coming soon — no SMS provider is connected yet</p>
+                <p className="text-xs text-muted-foreground">Notice/exam/fee-due SMS alerts, sent to any contact with a phone number on file</p>
               </div>
-              <Switch checked={smsEnabled} onCheckedChange={setSmsEnabled} disabled />
+              <Switch checked={smsEnabled} onCheckedChange={setSmsEnabled} />
             </div>
           </div>
 

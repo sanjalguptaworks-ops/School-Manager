@@ -24,3 +24,4 @@ export * from "./notifications";
 export * from "./discipline";
 export * from "./messaging";
 export * from "./admissions";
+export * from "./audit-log";

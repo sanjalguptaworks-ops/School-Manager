@@ -6,6 +6,7 @@ import { hashPassword, generateTempPassword } from "../lib/password";
 import { signEmailChangeToken, verifyEmailChangeToken } from "../lib/jwt";
 import { sendEmailChangeConfirmation, sendWelcomeEmail } from "../lib/mailer";
 import { isEmailEnabledForSchool } from "../lib/school-settings";
+import { logAuditEvent } from "../lib/audit";
 import crypto from "crypto";
 
 const router = Router();
@@ -279,7 +280,7 @@ router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
       const authUserId = (req as any).authUserId;
-      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      const [me] = await db.select({ schoolId: usersTable.schoolId, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
       if (!me?.schoolId) {
         res.status(403).json({ error: "Your account isn't linked to a school" });
         return;
@@ -290,6 +291,9 @@ router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
         res.status(400).json({ error: "Invalid role" });
         return;
       }
+
+      const [before] = await db.select({ role: usersTable.role, name: usersTable.name }).from(usersTable).where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId))).limit(1);
+
       const updates: Record<string, any> = {};
       if (name) updates.name = name;
       if (role) updates.role = role;
@@ -312,6 +316,19 @@ router.patch("/users/:id", requireAuth, async (req, res): Promise<void> => {
         .where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId)))
         .returning();
       if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+
+      if (role && before && before.role !== role) {
+        logAuditEvent({
+          actorUserId: authUserId,
+          actorName: me.name,
+          action: "user.role_changed",
+          targetType: "user",
+          targetId: id,
+          details: `${before.name}: ${before.role} -> ${role}`,
+          schoolId: me.schoolId,
+        });
+      }
+
       const { passwordHash, ...safeUser } = updated;
       res.json(safeUser);
     } catch (err) {
@@ -326,7 +343,7 @@ router.delete("/users/:id", requireAuth, async (req, res): Promise<void> => {
   await requireRole(["admin"], req, res, async () => {
     try {
       const authUserId = (req as any).authUserId;
-      const [me] = await db.select({ schoolId: usersTable.schoolId }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+      const [me] = await db.select({ schoolId: usersTable.schoolId, name: usersTable.name }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
       if (!me?.schoolId) {
         res.status(403).json({ error: "Your account isn't linked to a school" });
         return;
@@ -337,6 +354,17 @@ router.delete("/users/:id", requireAuth, async (req, res): Promise<void> => {
         .where(and(eq(usersTable.id, id), eq(usersTable.schoolId, me.schoolId)))
         .returning();
       if (!deleted) { res.status(404).json({ error: "Not found" }); return; }
+
+      logAuditEvent({
+        actorUserId: authUserId,
+        actorName: me.name,
+        action: "user.deleted",
+        targetType: "user",
+        targetId: id,
+        details: `${deleted.name} (${deleted.email}, ${deleted.role})`,
+        schoolId: me.schoolId,
+      });
+
       res.status(204).send();
     } catch (err) {
       req.log.error(err);

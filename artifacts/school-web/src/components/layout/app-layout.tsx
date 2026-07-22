@@ -24,7 +24,8 @@ import {
   ShieldAlert,
   LineChart,
   MessageSquare,
-  UserPlus
+  UserPlus,
+  History
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
@@ -53,6 +54,7 @@ const navConfig = {
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/certificates", icon: Award, label: "Certificates" },
     { href: "/billing", icon: Wallet, label: "Billing" },
+    { href: "/audit-log", icon: History, label: "Audit Log" },
   ],
   teacher: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },

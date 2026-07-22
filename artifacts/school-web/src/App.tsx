@@ -42,6 +42,7 @@ import DisciplinePage from '@/pages/discipline/index';
 import AnalyticsPage from '@/pages/analytics/index';
 import MessagesPage from '@/pages/messages/index';
 import AdmissionsPage from '@/pages/admissions/index';
+import AuditLogPage from '@/pages/audit-log/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -188,6 +189,7 @@ function Router() {
       <Route path="/analytics"><ProtectedRoute component={AnalyticsPage} /></Route>
       <Route path="/messages/:id?"><ProtectedRoute component={MessagesPage} /></Route>
       <Route path="/admissions"><ProtectedRoute component={AdmissionsPage} /></Route>
+      <Route path="/audit-log"><ProtectedRoute component={AuditLogPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

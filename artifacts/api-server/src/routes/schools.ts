@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { db, schoolsTable } from "@workspace/db";
+import { db, schoolsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole, requireSchool } from "../middlewares/auth";
+import { logAuditEvent } from "../lib/audit";
 
 const router = Router();
 
@@ -223,6 +224,21 @@ router.patch("/schools/:id", requireAuth, async (req, res): Promise<void> => {
         res.status(404).json({ error: "Not found" });
         return;
       }
+
+      if ("suspendedFrom" in updates && updates.suspendedFrom !== existing.suspendedFrom) {
+        const authUserId = (req as any).authUserId;
+        const [actor] = await db.select({ name: usersTable.name }).from(usersTable).where(eq(usersTable.id, authUserId)).limit(1);
+        logAuditEvent({
+          actorUserId: authUserId,
+          actorName: actor?.name ?? "Unknown",
+          action: updates.suspendedFrom ? "school.suspended" : "school.unsuspended",
+          targetType: "school",
+          targetId: id,
+          details: `${school.name}${updates.suspendedFrom ? ` from ${updates.suspendedFrom}` : ""}`,
+          schoolId: id,
+        });
+      }
+
       res.json(school);
     } catch (err) {
       req.log.error(err);

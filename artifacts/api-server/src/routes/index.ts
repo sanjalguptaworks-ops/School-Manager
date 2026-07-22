@@ -25,6 +25,7 @@ import disciplineRouter from "./discipline";
 import analyticsRouter from "./analytics";
 import messagingRouter from "./messaging";
 import admissionsRouter from "./admissions";
+import auditLogRouter from "./audit-log";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(disciplineRouter);
 router.use(analyticsRouter);
 router.use(messagingRouter);
 router.use(admissionsRouter);
+router.use(auditLogRouter);
 
 export default router;

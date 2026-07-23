@@ -6,6 +6,7 @@ import { notifyFeeDue } from "../lib/notify";
 import { getStudentAccessScope, canAccessStudent } from "../lib/student-access";
 import { getTeacherClassScope, canAccessClass } from "../lib/teacher-access";
 import { createPaymentLink } from "../lib/razorpay";
+import { generateReceiptNumber } from "../lib/receipt";
 
 const router = Router();
 
@@ -98,6 +99,7 @@ router.get("/fee-payments", requireAuth, requireSchool, async (req, res) => {
         feeStructureId: feePaymentsTable.feeStructureId,
         status: feePaymentsTable.status,
         paidOn: feePaymentsTable.paidOn,
+        receiptNumber: feePaymentsTable.receiptNumber,
         razorpayPaymentLinkUrl: feePaymentsTable.razorpayPaymentLinkUrl,
         installmentNumber: feePaymentsTable.installmentNumber,
         totalInstallments: feePaymentsTable.totalInstallments,
@@ -232,7 +234,7 @@ router.post("/fee-payments/:id/mark-paid", requireAuth, requireSchool, async (re
       const today = new Date().toISOString().split("T")[0];
       const [updated] = await db
         .update(feePaymentsTable)
-        .set({ status: "paid", paidOn: today })
+        .set({ status: "paid", paidOn: today, receiptNumber: generateReceiptNumber(id) })
         .where(eq(feePaymentsTable.id, id))
         .returning();
       if (!updated) { res.status(404).json({ error: "Not found" }); return; }

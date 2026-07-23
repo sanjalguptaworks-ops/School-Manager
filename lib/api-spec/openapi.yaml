@@ -36,6 +36,14 @@ tags:
     description: Parent/student polls
   - name: custom-pages
     description: Admin-authored static content pages
+  - name: appointments
+    description: Parent-teacher appointment scheduling
+  - name: parents
+    description: Parent/child account linking
+  - name: timeline
+    description: Merged parent/student activity feed
+  - name: subjects
+    description: Subjects taught to a student's class, and by whom
 
 paths:
   /healthz:
@@ -1047,6 +1055,128 @@ paths:
         "204":
           description: Deleted
 
+  # ── Appointments ──────────────────────────────────────────────────────────
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      summary: List appointments
+      responses:
+        "200":
+          description: Appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      summary: Request an appointment (parent only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+  /appointments/{id}:
+    patch:
+      operationId: updateAppointmentStatus
+      tags: [appointments]
+      summary: Confirm or cancel an appointment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppointmentStatusInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+
+  /parents/{parentId}/students:
+    get:
+      operationId: listParentStudents
+      tags: [parents]
+      summary: List a parent's linked children (admin/teacher can view any parent; a parent can only view their own)
+      parameters:
+        - name: parentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Linked children
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParentStudent"
+
+  # ── Timeline ──────────────────────────────────────────────────────────────
+  /timeline:
+    get:
+      operationId: getTimeline
+      tags: [timeline]
+      summary: Merged parent/student activity feed (notices, events, homework, gallery, polls)
+      parameters:
+        - name: studentId
+          in: query
+          description: For a parent with multiple children, which child's class to scope to
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Timeline items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimelineItem"
+
+  /subjects:
+    get:
+      operationId: listSubjects
+      tags: [subjects]
+      summary: List subjects taught to a student's class, and by whom
+      parameters:
+        - name: studentId
+          in: query
+          description: For a parent with multiple children, which child's class to scope to
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubjectTeacher"
+
   # ── Fees ──────────────────────────────────────────────────────────────────
   /fee-structures:
     get:
@@ -1822,6 +1952,141 @@ components:
           type: string
           minLength: 1
 
+    # ── Appointments ────────────────────────────────────────────────────────
+    Appointment:
+      type: object
+      required: [id, parentId, teacherId, studentId, subject, scheduledAt, status, createdAt]
+      properties:
+        id:
+          type: integer
+        parentId:
+          type: integer
+        teacherId:
+          type: integer
+        studentId:
+          type: integer
+        subject:
+          type: string
+        reason:
+          type: ["string", "null"]
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+        parent:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        teacher:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        student:
+          type: object
+          properties:
+            id:
+              type: integer
+            rollNo:
+              type: string
+
+    AppointmentInput:
+      type: object
+      required: [teacherId, studentId, subject, scheduledAt]
+      properties:
+        teacherId:
+          type: integer
+        studentId:
+          type: integer
+        subject:
+          type: string
+          minLength: 1
+        reason:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+
+    UpdateAppointmentStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [confirmed, cancelled]
+
+    ParentStudent:
+      type: object
+      required: [id, userId, classId, rollNo]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        classId:
+          type: integer
+        rollNo:
+          type: string
+        dob:
+          type: ["string", "null"]
+        guardianName:
+          type: ["string", "null"]
+        guardianContact:
+          type: ["string", "null"]
+        user:
+          $ref: "#/components/schemas/User"
+        class:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            section:
+              type: string
+
+    SubjectTeacher:
+      type: object
+      required: [subject]
+      properties:
+        subject:
+          type: string
+        teacherId:
+          type: ["integer", "null"]
+        teacherName:
+          type: ["string", "null"]
+        teacherAvatarUrl:
+          type: ["string", "null"]
+
+    TimelineItem:
+      type: object
+      required: [id, type, title, date, link]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [notice, event, homework, gallery, poll]
+        title:
+          type: string
+        subtitle:
+          type: ["string", "null"]
+        date:
+          type: string
+          format: date-time
+        link:
+          type: string
+
     AddCustomPageAttachmentInput:
       type: object
       required: [fileUrl, fileName]
@@ -1882,6 +2147,8 @@ components:
         paidOn:
           type: ["string", "null"]
           format: date
+        receiptNumber:
+          type: ["string", "null"]
         student:
           $ref: "#/components/schemas/Student"
         feeStructure:

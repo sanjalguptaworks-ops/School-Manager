@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, X } from "lucide-react";
+import { useSelectedChild } from "@/lib/selected-child-context";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -40,6 +41,7 @@ export default function TimetablePage() {
   const isAdmin = user?.role === "admin";
   const isTeacher = user?.role === "teacher";
   const { toast } = useToast();
+  const { selectedChildId } = useSelectedChild();
 
   const { data: classes } = useListClasses();
   const { data: teachers } = useListTeachers();
@@ -60,14 +62,17 @@ export default function TimetablePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = !myScheduleMode && classId ? `?classId=${classId}` : "";
+      const params = new URLSearchParams();
+      if (!myScheduleMode && classId) params.set("classId", classId);
+      if (user?.role === "parent" && selectedChildId) params.set("studentId", String(selectedChildId));
+      const qs = params.toString() ? `?${params.toString()}` : "";
       const res = await fetch(`${BASE_URL}/api/timetable${qs}`, { credentials: "include" });
       const data = await res.json().catch(() => []);
       if (res.ok) setSlots(data);
     } finally {
       setLoading(false);
     }
-  }, [classId, myScheduleMode]);
+  }, [classId, myScheduleMode, user?.role, selectedChildId]);
 
   useEffect(() => {
     load();

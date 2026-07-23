@@ -28,3 +28,4 @@ export * from "./audit-log";
 export * from "./galleries";
 export * from "./polls";
 export * from "./custom-pages";
+export * from "./appointments";

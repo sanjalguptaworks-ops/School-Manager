@@ -48,11 +48,14 @@ import GalleryDetailPage from '@/pages/gallery/detail';
 import PollsPage from '@/pages/polls/index';
 import CustomPagesPage from '@/pages/custom-pages/index';
 import CustomPageDetailPage from '@/pages/custom-pages/detail';
+import AppointmentsPage from '@/pages/appointments/index';
+import SubjectsPage from '@/pages/subjects/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
 
 import { AuthProvider, useAppAuth } from "@/lib/auth-context";
+import { SelectedChildProvider } from "@/lib/selected-child-context";
 import { AppLayout } from "@/components/layout/app-layout";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -200,6 +203,8 @@ function Router() {
       <Route path="/polls"><ProtectedRoute component={PollsPage} /></Route>
       <Route path="/custom-pages"><ProtectedRoute component={CustomPagesPage} /></Route>
       <Route path="/custom-pages/:id"><ProtectedRoute component={CustomPageDetailPage} /></Route>
+      <Route path="/appointments"><ProtectedRoute component={AppointmentsPage} /></Route>
+      <Route path="/subjects"><ProtectedRoute component={SubjectsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />
@@ -212,10 +217,12 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={basePath}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
+          <SelectedChildProvider>
+            <WouterRouter base={basePath}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </SelectedChildProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

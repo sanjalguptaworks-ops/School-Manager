@@ -29,6 +29,9 @@ import auditLogRouter from "./audit-log";
 import galleriesRouter from "./galleries";
 import pollsRouter from "./polls";
 import customPagesRouter from "./custom-pages";
+import appointmentsRouter from "./appointments";
+import timelineRouter from "./timeline";
+import subjectsRouter from "./subjects";
 
 const router: IRouter = Router();
 
@@ -62,5 +65,8 @@ router.use(auditLogRouter);
 router.use(galleriesRouter);
 router.use(pollsRouter);
 router.use(customPagesRouter);
+router.use(appointmentsRouter);
+router.use(timelineRouter);
+router.use(subjectsRouter);
 
 export default router;

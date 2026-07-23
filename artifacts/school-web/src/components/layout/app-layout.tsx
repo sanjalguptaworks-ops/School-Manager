@@ -28,10 +28,13 @@ import {
   History,
   Image,
   Vote,
-  FolderOpen
+  FolderOpen,
+  CalendarPlus,
+  BookOpenCheck
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
+import { ChildSwitcher } from "./child-switcher";
 import { Button } from "../ui/button";
 
 const navConfig = {
@@ -57,6 +60,7 @@ const navConfig = {
     { href: "/gallery", icon: Image, label: "Gallery" },
     { href: "/polls", icon: Vote, label: "Polls" },
     { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
+    { href: "/appointments", icon: CalendarPlus, label: "Appointments" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/certificates", icon: Award, label: "Certificates" },
     { href: "/billing", icon: Wallet, label: "Billing" },
@@ -77,6 +81,7 @@ const navConfig = {
     { href: "/gallery", icon: Image, label: "Gallery" },
     { href: "/polls", icon: Vote, label: "Polls" },
     { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
+    { href: "/appointments", icon: CalendarPlus, label: "Appointments" },
     { href: "/certificates", icon: Award, label: "Certificates" },
   ],
   student: [
@@ -85,6 +90,7 @@ const navConfig = {
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
+    { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
@@ -99,6 +105,7 @@ const navConfig = {
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
+    { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
@@ -106,6 +113,7 @@ const navConfig = {
     { href: "/gallery", icon: Image, label: "Gallery" },
     { href: "/polls", icon: Vote, label: "Polls" },
     { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
+    { href: "/appointments", icon: CalendarPlus, label: "Appointments" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ],
@@ -223,6 +231,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <h1 className="font-bold text-lg truncate">{brandName}</h1>
           </div>
           <div className="flex items-center gap-1">
+            <ChildSwitcher />
             <NotificationBell />
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -231,7 +240,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Desktop Top Bar */}
-        <div className="hidden md:flex items-center justify-end px-8 py-2 border-b bg-card/50 print:hidden">
+        <div className="hidden md:flex items-center justify-end gap-2 px-8 py-2 border-b bg-card/50 print:hidden">
+          <ChildSwitcher />
           <NotificationBell />
         </div>
 

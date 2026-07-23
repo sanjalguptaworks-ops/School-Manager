@@ -19,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ShieldAlert, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useSelectedChild } from "@/lib/selected-child-context";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -43,6 +44,7 @@ export default function DisciplinePage() {
   const canManage = user?.role === "admin" || user?.role === "teacher";
   const isParent = user?.role === "parent";
   const { toast } = useToast();
+  const { selectedChildId } = useSelectedChild();
 
   const [items, setItems] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,13 +52,14 @@ export default function DisciplinePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/discipline-incidents`, { credentials: "include" });
+      const qs = isParent && selectedChildId ? `?studentId=${selectedChildId}` : "";
+      const res = await fetch(`${BASE_URL}/api/discipline-incidents${qs}`, { credentials: "include" });
       const data = await res.json().catch(() => []);
       if (res.ok) setItems(data);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isParent, selectedChildId]);
 
   useEffect(() => {
     load();

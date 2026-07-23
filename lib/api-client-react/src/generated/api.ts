@@ -22,6 +22,8 @@ import type {
 import type {
   AddCustomPageAttachmentInput,
   AddGalleryPhotosInput,
+  Appointment,
+  AppointmentInput,
   AttendanceBulkInput,
   AttendanceRecord,
   AttendanceUpdate,
@@ -45,6 +47,7 @@ import type {
   GalleryAlbumInput,
   GalleryPhoto,
   GetAttendanceSummaryParams,
+  GetTimelineParams,
   HealthStatus,
   ListAttendanceParams,
   ListExamsParams,
@@ -55,11 +58,13 @@ import type {
   ListNoticesParams,
   ListPollsParams,
   ListStudentsParams,
+  ListSubjectsParams,
   ListUsersParams,
   Mark,
   MarksBulkInput,
   Notice,
   NoticeInput,
+  ParentStudent,
   Poll,
   PollInput,
   Student,
@@ -67,10 +72,13 @@ import type {
   StudentInput,
   StudentReport,
   StudentUpdate,
+  SubjectTeacher,
   Teacher,
   TeacherCreated,
   TeacherInput,
   TeacherUpdate,
+  TimelineItem,
+  UpdateAppointmentStatusInput,
   User,
   UserCreated,
   UserInput,
@@ -3987,6 +3995,471 @@ export const useDeleteCustomPageAttachment = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteCustomPageAttachmentMutationOptions(options));
     }
+
+export const getListAppointmentsUrl = () => {
+
+
+
+
+  return `/api/appointments`
+}
+
+/**
+ * @summary List appointments
+ */
+export const listAppointments = async ( options?: RequestInit): Promise<Appointment[]> => {
+
+  return customFetch<Appointment[]>(getListAppointmentsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAppointmentsQueryKey = () => {
+    return [
+    `/api/appointments`
+    ] as const;
+    }
+
+
+export const getListAppointmentsQueryOptions = <TData = Awaited<ReturnType<typeof listAppointments>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAppointments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAppointmentsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAppointments>>> = ({ signal }) => listAppointments({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAppointments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAppointmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAppointments>>>
+export type ListAppointmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List appointments
+ */
+
+export function useListAppointments<TData = Awaited<ReturnType<typeof listAppointments>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAppointments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAppointmentsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAppointmentUrl = () => {
+
+
+
+
+  return `/api/appointments`
+}
+
+/**
+ * @summary Request an appointment (parent only)
+ */
+export const createAppointment = async (appointmentInput: AppointmentInput, options?: RequestInit): Promise<Appointment> => {
+
+  return customFetch<Appointment>(getCreateAppointmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(appointmentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAppointmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAppointment>>, TError,{data: BodyType<AppointmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAppointment>>, TError,{data: BodyType<AppointmentInput>}, TContext> => {
+
+const mutationKey = ['createAppointment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAppointment>>, {data: BodyType<AppointmentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAppointment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAppointmentMutationResult = NonNullable<Awaited<ReturnType<typeof createAppointment>>>
+    export type CreateAppointmentMutationBody = BodyType<AppointmentInput>
+    export type CreateAppointmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Request an appointment (parent only)
+ */
+export const useCreateAppointment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAppointment>>, TError,{data: BodyType<AppointmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAppointment>>,
+        TError,
+        {data: BodyType<AppointmentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAppointmentMutationOptions(options));
+    }
+
+export const getUpdateAppointmentStatusUrl = (id: number,) => {
+
+
+
+
+  return `/api/appointments/${id}`
+}
+
+/**
+ * @summary Confirm or cancel an appointment
+ */
+export const updateAppointmentStatus = async (id: number,
+    updateAppointmentStatusInput: UpdateAppointmentStatusInput, options?: RequestInit): Promise<Appointment> => {
+
+  return customFetch<Appointment>(getUpdateAppointmentStatusUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(updateAppointmentStatusInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateAppointmentStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAppointmentStatus>>, TError,{id: number;data: BodyType<UpdateAppointmentStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAppointmentStatus>>, TError,{id: number;data: BodyType<UpdateAppointmentStatusInput>}, TContext> => {
+
+const mutationKey = ['updateAppointmentStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAppointmentStatus>>, {id: number;data: BodyType<UpdateAppointmentStatusInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAppointmentStatus(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAppointmentStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateAppointmentStatus>>>
+    export type UpdateAppointmentStatusMutationBody = BodyType<UpdateAppointmentStatusInput>
+    export type UpdateAppointmentStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Confirm or cancel an appointment
+ */
+export const useUpdateAppointmentStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAppointmentStatus>>, TError,{id: number;data: BodyType<UpdateAppointmentStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAppointmentStatus>>,
+        TError,
+        {id: number;data: BodyType<UpdateAppointmentStatusInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAppointmentStatusMutationOptions(options));
+    }
+
+export const getListParentStudentsUrl = (parentId: number,) => {
+
+
+
+
+  return `/api/parents/${parentId}/students`
+}
+
+/**
+ * @summary List a parent's linked children (admin/teacher can view any parent; a parent can only view their own)
+ */
+export const listParentStudents = async (parentId: number, options?: RequestInit): Promise<ParentStudent[]> => {
+
+  return customFetch<ParentStudent[]>(getListParentStudentsUrl(parentId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListParentStudentsQueryKey = (parentId: number,) => {
+    return [
+    `/api/parents/${parentId}/students`
+    ] as const;
+    }
+
+
+export const getListParentStudentsQueryOptions = <TData = Awaited<ReturnType<typeof listParentStudents>>, TError = ErrorType<unknown>>(parentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listParentStudents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListParentStudentsQueryKey(parentId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listParentStudents>>> = ({ signal }) => listParentStudents(parentId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: parentId !== null && parentId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listParentStudents>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListParentStudentsQueryResult = NonNullable<Awaited<ReturnType<typeof listParentStudents>>>
+export type ListParentStudentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List a parent's linked children (admin/teacher can view any parent; a parent can only view their own)
+ */
+
+export function useListParentStudents<TData = Awaited<ReturnType<typeof listParentStudents>>, TError = ErrorType<unknown>>(
+ parentId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listParentStudents>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListParentStudentsQueryOptions(parentId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetTimelineUrl = (params?: GetTimelineParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/timeline?${stringifiedParams}` : `/api/timeline`
+}
+
+/**
+ * @summary Merged parent/student activity feed (notices, events, homework, gallery, polls)
+ */
+export const getTimeline = async (params?: GetTimelineParams, options?: RequestInit): Promise<TimelineItem[]> => {
+
+  return customFetch<TimelineItem[]>(getGetTimelineUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTimelineQueryKey = (params?: GetTimelineParams,) => {
+    return [
+    `/api/timeline`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetTimelineQueryOptions = <TData = Awaited<ReturnType<typeof getTimeline>>, TError = ErrorType<unknown>>(params?: GetTimelineParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTimelineQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTimeline>>> = ({ signal }) => getTimeline(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTimeline>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTimelineQueryResult = NonNullable<Awaited<ReturnType<typeof getTimeline>>>
+export type GetTimelineQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Merged parent/student activity feed (notices, events, homework, gallery, polls)
+ */
+
+export function useGetTimeline<TData = Awaited<ReturnType<typeof getTimeline>>, TError = ErrorType<unknown>>(
+ params?: GetTimelineParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTimeline>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTimelineQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getListSubjectsUrl = (params?: ListSubjectsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/subjects?${stringifiedParams}` : `/api/subjects`
+}
+
+/**
+ * @summary List subjects taught to a student's class, and by whom
+ */
+export const listSubjects = async (params?: ListSubjectsParams, options?: RequestInit): Promise<SubjectTeacher[]> => {
+
+  return customFetch<SubjectTeacher[]>(getListSubjectsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSubjectsQueryKey = (params?: ListSubjectsParams,) => {
+    return [
+    `/api/subjects`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListSubjectsQueryOptions = <TData = Awaited<ReturnType<typeof listSubjects>>, TError = ErrorType<unknown>>(params?: ListSubjectsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSubjectsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSubjects>>> = ({ signal }) => listSubjects(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSubjectsQueryResult = NonNullable<Awaited<ReturnType<typeof listSubjects>>>
+export type ListSubjectsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List subjects taught to a student's class, and by whom
+ */
+
+export function useListSubjects<TData = Awaited<ReturnType<typeof listSubjects>>, TError = ErrorType<unknown>>(
+ params?: ListSubjectsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSubjects>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSubjectsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getListFeeStructuresUrl = (params?: ListFeeStructuresParams,) => {
   const normalizedParams = new URLSearchParams();

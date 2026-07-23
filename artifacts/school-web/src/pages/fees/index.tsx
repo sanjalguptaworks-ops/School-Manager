@@ -34,8 +34,9 @@ import { Label } from "@/components/ui/label";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { Check, Plus, Zap, CreditCard, Download } from "lucide-react";
+import { Check, Plus, Zap, CreditCard, Download, Printer } from "lucide-react";
 import { toCsv, downloadCsv } from "@/lib/csv";
+import { useSelectedChild } from "@/lib/selected-child-context";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -462,10 +463,62 @@ function AdminFeeTable() {
   );
 }
 
+// ── Printable Receipt ─────────────────────────────────────────────────────────
+
+function ReceiptDialog({ payment }: { payment: any }) {
+  const { user } = useAppAuth();
+  const [open, setOpen] = useState(false);
+  const schoolName = user?.schoolName || "EduCore";
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+          <Printer className="w-3.5 h-3.5" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <style>{`
+          @media print {
+            body * { visibility: hidden; }
+            .receipt-print, .receipt-print * { visibility: visible; }
+            .receipt-print { position: fixed; inset: 0; padding: 2rem; }
+            .print\\:hidden { display: none !important; }
+          }
+        `}</style>
+        <DialogHeader className="print:hidden">
+          <DialogTitle>Fee Receipt</DialogTitle>
+        </DialogHeader>
+        <div className="receipt-print space-y-4 py-2">
+          <div className="text-center border-b pb-3">
+            <p className="font-bold text-lg">{schoolName}</p>
+            <p className="text-sm text-muted-foreground">Fee Payment Receipt</p>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Receipt No.</span><span className="font-medium">{payment.receiptNumber || `FR-${payment.id}`}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Term</span><span className="font-medium">{payment.feeStructure?.term}{installmentLabel(payment) ? ` (${installmentLabel(payment)})` : ""}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Amount Paid</span><span className="font-bold">₹{effectiveAmount(payment)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Paid On</span><span className="font-medium">{payment.paidOn ? format(new Date(payment.paidOn), "MMM d, yyyy") : "-"}</span></div>
+          </div>
+        </div>
+        <DialogFooter className="print:hidden">
+          <Button variant="ghost" onClick={() => setOpen(false)}>Close</Button>
+          <Button onClick={() => window.print()}><Printer className="w-4 h-4 mr-2" /> Print</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Student Table ─────────────────────────────────────────────────────────────
 
 function StudentFeeTable() {
-  const { data: payments, isLoading } = useListFeePayments();
+  const { user } = useAppAuth();
+  const { selectedChildId } = useSelectedChild();
+  const params = user?.role === "parent" && selectedChildId ? { studentId: selectedChildId } : {};
+  const { data: payments, isLoading } = useListFeePayments(params, {
+    query: { queryKey: getListFeePaymentsQueryKey(params) },
+  });
   const { toast } = useToast();
   const [payingId, setPayingId] = useState<number | null>(null);
 
@@ -522,9 +575,12 @@ function StudentFeeTable() {
               </TableCell>
               <TableCell className="text-right pr-6">
                 {payment.status === "paid" ? (
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
-                    Paid on {payment.paidOn ? format(new Date(payment.paidOn), "MMM d") : ""}
-                  </Badge>
+                  <div className="flex items-center justify-end gap-2">
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
+                      Paid on {payment.paidOn ? format(new Date(payment.paidOn), "MMM d") : ""}
+                    </Badge>
+                    <ReceiptDialog payment={payment} />
+                  </div>
                 ) : (
                   <Button size="sm" onClick={() => handlePay(payment.id)} disabled={payingId === payment.id}>
                     <CreditCard className="w-4 h-4 mr-2" />

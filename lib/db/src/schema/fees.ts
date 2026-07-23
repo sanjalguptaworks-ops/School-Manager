@@ -34,6 +34,9 @@ export const feePaymentsTable = pgTable(
       .notNull()
       .default("pending"),
     paidOn: date("paid_on", { mode: "string" }),
+    // Set alongside paidOn, wherever a payment is actually confirmed --
+    // shown to the parent as a human-readable receipt reference.
+    receiptNumber: text("receipt_number"),
     // Set when a parent/student generates a Razorpay Payment Link for this
     // fee (see POST /fee-payments/:id/pay). Reused on repeat clicks rather
     // than creating a new link every time, until it's actually paid.

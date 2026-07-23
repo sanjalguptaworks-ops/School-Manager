@@ -290,6 +290,42 @@ export async function notifyLeaveRequestReviewed(
   }
 }
 
+// In-app-only, same reasoning as notifyLeaveRequestReviewed -- a single
+// targeted recipient doesn't need an email/SMS blast.
+export async function notifyAppointmentRequested(
+  appointment: { teacherId: number; parentName: string; subject: string; scheduledAt: Date },
+  schoolId: number,
+): Promise<void> {
+  try {
+    await db.insert(notificationsTable).values({
+      userId: appointment.teacherId,
+      title: "New appointment request",
+      body: `${appointment.parentName} requested a meeting: ${appointment.subject} on ${appointment.scheduledAt.toLocaleString()}`,
+      link: "/appointments",
+      schoolId,
+    });
+  } catch (err) {
+    console.error("Failed to write appointment-requested notification", err);
+  }
+}
+
+export async function notifyAppointmentStatusChanged(
+  appointment: { parentId: number; status: "confirmed" | "cancelled"; subject: string; scheduledAt: Date },
+  schoolId: number,
+): Promise<void> {
+  try {
+    await db.insert(notificationsTable).values({
+      userId: appointment.parentId,
+      title: `Appointment ${appointment.status}`,
+      body: `Your appointment "${appointment.subject}" on ${appointment.scheduledAt.toLocaleString()} was ${appointment.status}.`,
+      link: "/appointments",
+      schoolId,
+    });
+  } catch (err) {
+    console.error("Failed to write appointment-status-changed notification", err);
+  }
+}
+
 // In-app-only, same reasoning as notifyLeaveRequestReviewed -- a real-time
 // chat message doesn't need an email/SMS blast, just a bell-icon ping for
 // the other participant.

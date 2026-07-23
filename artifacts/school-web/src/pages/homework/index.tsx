@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Paperclip, Plus, Trash2, Camera, ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { uploadHomeworkSubmission, UploadConfigError } from "@/lib/upload-image";
+import { useSelectedChild } from "@/lib/selected-child-context";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -40,6 +41,7 @@ export default function HomeworkPage() {
   const { user } = useAppAuth();
   const canManage = user?.role === "admin" || user?.role === "teacher";
   const { toast } = useToast();
+  const { selectedChildId } = useSelectedChild();
 
   const [classFilter, setClassFilter] = useState<string>("all");
   const { data: classes } = useListClasses();
@@ -50,14 +52,17 @@ export default function HomeworkPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const qs = classFilter !== "all" ? `?classId=${classFilter}` : "";
+      const params = new URLSearchParams();
+      if (classFilter !== "all") params.set("classId", classFilter);
+      if (user?.role === "parent" && selectedChildId) params.set("studentId", String(selectedChildId));
+      const qs = params.toString() ? `?${params.toString()}` : "";
       const res = await fetch(`${BASE_URL}/api/homework${qs}`, { credentials: "include" });
       const data = await res.json().catch(() => []);
       if (res.ok) setItems(data);
     } finally {
       setLoading(false);
     }
-  }, [classFilter]);
+  }, [classFilter, user?.role, selectedChildId]);
 
   useEffect(() => {
     load();

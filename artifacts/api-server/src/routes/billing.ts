@@ -20,6 +20,7 @@ import {
 } from "../lib/razorpay";
 import { getTierForStudentCount, computeAmount } from "../lib/pricing";
 import { sendPaymentLinkEmail } from "../lib/mailer";
+import { generateReceiptNumber } from "../lib/receipt";
 
 const router = Router();
 
@@ -433,7 +434,7 @@ router.post("/billing/webhook", async (req, res): Promise<void> => {
       if (feePayment) {
         await db
           .update(feePaymentsTable)
-          .set({ status: "paid", paidOn: toDateString(new Date()) })
+          .set({ status: "paid", paidOn: toDateString(new Date()), receiptNumber: generateReceiptNumber(feePayment.id) })
           .where(eq(feePaymentsTable.id, feePayment.id));
       }
 

@@ -16,6 +16,8 @@ export interface FeePayment {
   status: FeePaymentStatus;
   /** @nullable */
   paidOn?: Date | null;
+  /** @nullable */
+  receiptNumber?: string | null;
   student?: Student;
   feeStructure?: FeeStructure;
 }

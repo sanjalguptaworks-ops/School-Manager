@@ -422,6 +422,119 @@ export interface CustomPageInput {
   body: string;
 }
 
+export type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+
+
+export const AppointmentStatus = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
+} as const;
+
+export type AppointmentParent = {
+  id?: number;
+  name?: string;
+};
+
+export type AppointmentTeacher = {
+  id?: number;
+  name?: string;
+};
+
+export type AppointmentStudent = {
+  id?: number;
+  rollNo?: string;
+};
+
+export interface Appointment {
+  id: number;
+  parentId: number;
+  teacherId: number;
+  studentId: number;
+  subject: string;
+  /** @nullable */
+  reason?: string | null;
+  scheduledAt: string;
+  status: AppointmentStatus;
+  createdAt: string;
+  parent?: AppointmentParent;
+  teacher?: AppointmentTeacher;
+  student?: AppointmentStudent;
+}
+
+export interface AppointmentInput {
+  teacherId: number;
+  studentId: number;
+  /** @minLength 1 */
+  subject: string;
+  reason?: string;
+  scheduledAt: string;
+}
+
+export type UpdateAppointmentStatusInputStatus = typeof UpdateAppointmentStatusInputStatus[keyof typeof UpdateAppointmentStatusInputStatus];
+
+
+export const UpdateAppointmentStatusInputStatus = {
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface UpdateAppointmentStatusInput {
+  status: UpdateAppointmentStatusInputStatus;
+}
+
+export type ParentStudentClass = {
+  id?: number;
+  name?: string;
+  section?: string;
+};
+
+export interface ParentStudent {
+  id: number;
+  userId: number;
+  classId: number;
+  rollNo: string;
+  /** @nullable */
+  dob?: string | null;
+  /** @nullable */
+  guardianName?: string | null;
+  /** @nullable */
+  guardianContact?: string | null;
+  user?: User;
+  class?: ParentStudentClass;
+}
+
+export interface SubjectTeacher {
+  subject: string;
+  /** @nullable */
+  teacherId?: number | null;
+  /** @nullable */
+  teacherName?: string | null;
+  /** @nullable */
+  teacherAvatarUrl?: string | null;
+}
+
+export type TimelineItemType = typeof TimelineItemType[keyof typeof TimelineItemType];
+
+
+export const TimelineItemType = {
+  notice: 'notice',
+  event: 'event',
+  homework: 'homework',
+  gallery: 'gallery',
+  poll: 'poll',
+} as const;
+
+export interface TimelineItem {
+  id: string;
+  type: TimelineItemType;
+  title: string;
+  /** @nullable */
+  subtitle?: string | null;
+  date: string;
+  link: string;
+}
+
 export interface AddCustomPageAttachmentInput {
   fileUrl: string;
   fileName: string;
@@ -460,6 +573,8 @@ export interface FeePayment {
   status: FeePaymentStatus;
   /** @nullable */
   paidOn?: string | null;
+  /** @nullable */
+  receiptNumber?: string | null;
   student?: Student;
   feeStructure?: FeeStructure;
 }
@@ -545,6 +660,20 @@ studentId?: number;
 
 export type ListPollsParams = {
 classId?: number;
+/**
+ * For a parent with multiple children, which child's class to scope to
+ */
+studentId?: number;
+};
+
+export type GetTimelineParams = {
+/**
+ * For a parent with multiple children, which child's class to scope to
+ */
+studentId?: number;
+};
+
+export type ListSubjectsParams = {
 /**
  * For a parent with multiple children, which child's class to scope to
  */

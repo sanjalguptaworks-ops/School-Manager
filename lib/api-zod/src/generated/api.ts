@@ -1330,6 +1330,177 @@ export const DeleteCustomPageAttachmentResponse = zod.void()
 
 
 /**
+ * @summary List appointments
+ */
+export const ListAppointmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "parentId": zod.number(),
+  "teacherId": zod.number(),
+  "studentId": zod.number(),
+  "subject": zod.string(),
+  "reason": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date(),
+  "status": zod.enum(['pending', 'confirmed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "parent": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "teacher": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional()
+}).optional()
+})
+export const ListAppointmentsResponse = zod.array(ListAppointmentsResponseItem)
+
+
+/**
+ * @summary Request an appointment (parent only)
+ */
+
+
+
+export const CreateAppointmentBody = zod.object({
+  "teacherId": zod.number(),
+  "studentId": zod.number(),
+  "subject": zod.string().min(1),
+  "reason": zod.string().optional(),
+  "scheduledAt": zod.coerce.date()
+})
+
+export const CreateAppointmentResponse = zod.object({
+  "id": zod.number(),
+  "parentId": zod.number(),
+  "teacherId": zod.number(),
+  "studentId": zod.number(),
+  "subject": zod.string(),
+  "reason": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date(),
+  "status": zod.enum(['pending', 'confirmed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "parent": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "teacher": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary Confirm or cancel an appointment
+ */
+export const UpdateAppointmentStatusParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateAppointmentStatusBody = zod.object({
+  "status": zod.enum(['confirmed', 'cancelled'])
+})
+
+export const UpdateAppointmentStatusResponse = zod.object({
+  "id": zod.number(),
+  "parentId": zod.number(),
+  "teacherId": zod.number(),
+  "studentId": zod.number(),
+  "subject": zod.string(),
+  "reason": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date(),
+  "status": zod.enum(['pending', 'confirmed', 'cancelled']),
+  "createdAt": zod.coerce.date(),
+  "parent": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "teacher": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional()
+}).optional()
+})
+
+
+/**
+ * @summary List a parent's linked children (admin/teacher can view any parent; a parent can only view their own)
+ */
+export const ListParentStudentsParams = zod.object({
+  "parentId": zod.coerce.number()
+})
+
+export const ListParentStudentsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "classId": zod.number(),
+  "rollNo": zod.string(),
+  "dob": zod.string().nullish(),
+  "guardianName": zod.string().nullish(),
+  "guardianContact": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "role": zod.enum(['admin', 'teacher', 'student', 'parent']),
+  "createdAt": zod.coerce.date()
+}).optional(),
+  "class": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "section": zod.string().optional()
+}).optional()
+})
+export const ListParentStudentsResponse = zod.array(ListParentStudentsResponseItem)
+
+
+/**
+ * @summary Merged parent/student activity feed (notices, events, homework, gallery, polls)
+ */
+export const GetTimelineQueryParams = zod.object({
+  "studentId": zod.coerce.number().optional().describe('For a parent with multiple children, which child\'s class to scope to')
+})
+
+export const GetTimelineResponseItem = zod.object({
+  "id": zod.string(),
+  "type": zod.enum(['notice', 'event', 'homework', 'gallery', 'poll']),
+  "title": zod.string(),
+  "subtitle": zod.string().nullish(),
+  "date": zod.coerce.date(),
+  "link": zod.string()
+})
+export const GetTimelineResponse = zod.array(GetTimelineResponseItem)
+
+
+/**
+ * @summary List subjects taught to a student's class, and by whom
+ */
+export const ListSubjectsQueryParams = zod.object({
+  "studentId": zod.coerce.number().optional().describe('For a parent with multiple children, which child\'s class to scope to')
+})
+
+export const ListSubjectsResponseItem = zod.object({
+  "subject": zod.string(),
+  "teacherId": zod.number().nullish(),
+  "teacherName": zod.string().nullish(),
+  "teacherAvatarUrl": zod.string().nullish()
+})
+export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
+
+
+/**
  * @summary List fee structures
  */
 export const ListFeeStructuresQueryParams = zod.object({
@@ -1397,6 +1568,7 @@ export const ListFeePaymentsResponseItem = zod.object({
   "feeStructureId": zod.number(),
   "status": zod.enum(['pending', 'paid']),
   "paidOn": zod.coerce.date().nullish(),
+  "receiptNumber": zod.string().nullish(),
   "student": zod.object({
   "id": zod.number(),
   "userId": zod.number(),
@@ -1451,6 +1623,7 @@ export const MarkFeePaidResponse = zod.object({
   "feeStructureId": zod.number(),
   "status": zod.enum(['pending', 'paid']),
   "paidOn": zod.coerce.date().nullish(),
+  "receiptNumber": zod.string().nullish(),
   "student": zod.object({
   "id": zod.number(),
   "userId": zod.number(),

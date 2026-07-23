@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
+import { TimelineFeed } from "@/components/timeline-feed";
 
 const BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
@@ -329,6 +330,8 @@ function StudentDashboard({ user }: { user: any }) {
           </Card>
         </div>
       </div>
+
+      <TimelineFeed />
     </div>
   );
 }
@@ -456,6 +459,8 @@ function ParentDashboard({ user }: { user: any }) {
           </CardContent>
         </Card>
       </div>
+
+      <TimelineFeed />
     </div>
   );
 }

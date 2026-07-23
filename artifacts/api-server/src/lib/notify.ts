@@ -161,6 +161,50 @@ export async function notifyNewNotice(
   }
 }
 
+export async function notifyNewGalleryAlbum(
+  album: { title: string; classId: number | null },
+  schoolId: number,
+): Promise<void> {
+  try {
+    const contacts = album.classId ? await getClassRecipients(album.classId) : await getAllRecipients(schoolId);
+    if (contacts.length === 0) return;
+
+    const text = `New photos have been added to the gallery: ${album.title}\n\n— ${APP_NAME}`;
+    const html = `<p>New photos have been added to the gallery: <strong>${escapeHtml(album.title)}</strong></p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    const smsBody = `${APP_NAME}: New gallery album - ${album.title}`.slice(0, 300);
+
+    await dispatch(schoolId, contacts, `New gallery album: ${album.title}`, text, html, smsBody, {
+      title: "New gallery album",
+      body: album.title,
+      link: "/gallery",
+    });
+  } catch (err) {
+    console.error("Failed to send gallery notifications", err);
+  }
+}
+
+export async function notifyNewPoll(
+  poll: { question: string; classId: number | null },
+  schoolId: number,
+): Promise<void> {
+  try {
+    const contacts = poll.classId ? await getClassRecipients(poll.classId) : await getAllRecipients(schoolId);
+    if (contacts.length === 0) return;
+
+    const text = `A new poll is open: ${poll.question}\n\n— ${APP_NAME}`;
+    const html = `<p>A new poll is open: <strong>${escapeHtml(poll.question)}</strong></p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    const smsBody = `${APP_NAME}: New poll - ${poll.question}`.slice(0, 300);
+
+    await dispatch(schoolId, contacts, `New poll: ${poll.question}`, text, html, smsBody, {
+      title: "New poll",
+      body: poll.question,
+      link: "/polls",
+    });
+  } catch (err) {
+    console.error("Failed to send poll notifications", err);
+  }
+}
+
 export async function notifyNewExam(
   exam: {
     name: string;

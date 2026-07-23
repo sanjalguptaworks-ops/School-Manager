@@ -26,6 +26,9 @@ import analyticsRouter from "./analytics";
 import messagingRouter from "./messaging";
 import admissionsRouter from "./admissions";
 import auditLogRouter from "./audit-log";
+import galleriesRouter from "./galleries";
+import pollsRouter from "./polls";
+import customPagesRouter from "./custom-pages";
 
 const router: IRouter = Router();
 
@@ -56,5 +59,8 @@ router.use(analyticsRouter);
 router.use(messagingRouter);
 router.use(admissionsRouter);
 router.use(auditLogRouter);
+router.use(galleriesRouter);
+router.use(pollsRouter);
+router.use(customPagesRouter);
 
 export default router;

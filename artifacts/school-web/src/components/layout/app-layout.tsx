@@ -25,7 +25,10 @@ import {
   LineChart,
   MessageSquare,
   UserPlus,
-  History
+  History,
+  Image,
+  Vote,
+  FolderOpen
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
@@ -51,6 +54,9 @@ const navConfig = {
     { href: "/admissions", icon: UserPlus, label: "Admissions" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
+    { href: "/gallery", icon: Image, label: "Gallery" },
+    { href: "/polls", icon: Vote, label: "Polls" },
+    { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/certificates", icon: Award, label: "Certificates" },
     { href: "/billing", icon: Wallet, label: "Billing" },
@@ -68,6 +74,9 @@ const navConfig = {
     { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
+    { href: "/gallery", icon: Image, label: "Gallery" },
+    { href: "/polls", icon: Vote, label: "Polls" },
+    { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
     { href: "/certificates", icon: Award, label: "Certificates" },
   ],
   student: [
@@ -80,6 +89,9 @@ const navConfig = {
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
+    { href: "/gallery", icon: Image, label: "Gallery" },
+    { href: "/polls", icon: Vote, label: "Polls" },
+    { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ],
@@ -91,6 +103,9 @@ const navConfig = {
     { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
     { href: "/events", icon: CalendarDays, label: "Events" },
+    { href: "/gallery", icon: Image, label: "Gallery" },
+    { href: "/polls", icon: Vote, label: "Polls" },
+    { href: "/custom-pages", icon: FolderOpen, label: "Pages" },
     { href: "/fees", icon: CreditCard, label: "Fees" },
     { href: "/profile", icon: UserCircle, label: "Profile" },
   ],

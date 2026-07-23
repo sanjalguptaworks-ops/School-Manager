@@ -25,3 +25,6 @@ export * from "./discipline";
 export * from "./messaging";
 export * from "./admissions";
 export * from "./audit-log";
+export * from "./galleries";
+export * from "./polls";
+export * from "./custom-pages";

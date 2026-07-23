@@ -969,6 +969,367 @@ export const DeleteNoticeResponse = zod.void()
 
 
 /**
+ * @summary List gallery albums
+ */
+export const ListGalleryAlbumsQueryParams = zod.object({
+  "classId": zod.coerce.number().optional(),
+  "studentId": zod.coerce.number().optional().describe('For a parent with multiple children, which child\'s class to scope to')
+})
+
+export const ListGalleryAlbumsResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "albumDate": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "photoCount": zod.number().optional(),
+  "coverPhotoUrl": zod.string().nullish()
+})
+export const ListGalleryAlbumsResponse = zod.array(ListGalleryAlbumsResponseItem)
+
+
+/**
+ * @summary Create a gallery album (admin/teacher)
+ */
+
+
+
+export const CreateGalleryAlbumBody = zod.object({
+  "title": zod.string().min(1),
+  "albumDate": zod.string(),
+  "classId": zod.number().optional(),
+  "imageUrls": zod.array(zod.string()).optional()
+})
+
+export const CreateGalleryAlbumResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "albumDate": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "photoCount": zod.number().optional(),
+  "coverPhotoUrl": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get a gallery album with its photos
+ */
+export const GetGalleryAlbumParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetGalleryAlbumResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "albumDate": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "photoCount": zod.number().optional(),
+  "coverPhotoUrl": zod.string().nullish()
+}).and(zod.object({
+  "photos": zod.array(zod.object({
+  "id": zod.number(),
+  "albumId": zod.number(),
+  "imageUrl": zod.string(),
+  "createdAt": zod.coerce.date()
+}))
+}))
+
+
+/**
+ * @summary Delete a gallery album (admin/teacher)
+ */
+export const DeleteGalleryAlbumParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteGalleryAlbumResponse = zod.void()
+
+
+/**
+ * @summary Add photos to an album (admin/teacher)
+ */
+export const AddGalleryPhotosParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddGalleryPhotosBody = zod.object({
+  "imageUrls": zod.array(zod.string())
+})
+
+export const AddGalleryPhotosResponseItem = zod.object({
+  "id": zod.number(),
+  "albumId": zod.number(),
+  "imageUrl": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+export const AddGalleryPhotosResponse = zod.array(AddGalleryPhotosResponseItem)
+
+
+/**
+ * @summary Delete a photo from an album (admin/teacher)
+ */
+export const DeleteGalleryPhotoParams = zod.object({
+  "id": zod.coerce.number(),
+  "photoId": zod.coerce.number()
+})
+
+export const DeleteGalleryPhotoResponse = zod.void()
+
+
+/**
+ * @summary List polls
+ */
+export const ListPollsQueryParams = zod.object({
+  "classId": zod.coerce.number().optional(),
+  "studentId": zod.coerce.number().optional().describe('For a parent with multiple children, which child\'s class to scope to')
+})
+
+export const ListPollsResponseItem = zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "closesAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "hasVoted": zod.boolean(),
+  "myOptionId": zod.number().nullish()
+})
+export const ListPollsResponse = zod.array(ListPollsResponseItem)
+
+
+/**
+ * @summary Create a poll (admin/teacher)
+ */
+
+export const createPollBodyOptionsMin = 2;
+
+
+
+export const CreatePollBody = zod.object({
+  "question": zod.string().min(1),
+  "classId": zod.number().optional(),
+  "closesAt": zod.coerce.date().optional(),
+  "options": zod.array(zod.string()).min(createPollBodyOptionsMin)
+})
+
+export const CreatePollResponse = zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "closesAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "hasVoted": zod.boolean(),
+  "myOptionId": zod.number().nullish()
+})
+
+
+/**
+ * @summary Delete a poll (admin/teacher)
+ */
+export const DeletePollParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeletePollResponse = zod.void()
+
+
+/**
+ * @summary Cast a vote on a poll
+ */
+export const VotePollParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const VotePollBody = zod.object({
+  "optionId": zod.number()
+})
+
+export const VotePollResponse = zod.object({
+  "id": zod.number(),
+  "question": zod.string(),
+  "classId": zod.number().nullish(),
+  "createdBy": zod.number().nullish(),
+  "closesAt": zod.coerce.date().nullish(),
+  "createdAt": zod.coerce.date(),
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "hasVoted": zod.boolean(),
+  "myOptionId": zod.number().nullish()
+})
+
+
+/**
+ * @summary List custom pages
+ */
+export const ListCustomPagesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "pageId": zod.number(),
+  "fileUrl": zod.string(),
+  "fileName": zod.string(),
+  "createdAt": zod.coerce.date()
+})).optional()
+})
+export const ListCustomPagesResponse = zod.array(ListCustomPagesResponseItem)
+
+
+/**
+ * @summary Create a custom page (admin only)
+ */
+
+
+
+
+export const CreateCustomPageBody = zod.object({
+  "title": zod.string().min(1),
+  "body": zod.string().min(1)
+})
+
+export const CreateCustomPageResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "pageId": zod.number(),
+  "fileUrl": zod.string(),
+  "fileName": zod.string(),
+  "createdAt": zod.coerce.date()
+})).optional()
+})
+
+
+/**
+ * @summary Get a custom page with its attachments
+ */
+export const GetCustomPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetCustomPageResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "pageId": zod.number(),
+  "fileUrl": zod.string(),
+  "fileName": zod.string(),
+  "createdAt": zod.coerce.date()
+})).optional()
+})
+
+
+/**
+ * @summary Update a custom page (admin only)
+ */
+export const UpdateCustomPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+
+export const UpdateCustomPageBody = zod.object({
+  "title": zod.string().min(1),
+  "body": zod.string().min(1)
+})
+
+export const UpdateCustomPageResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date(),
+  "updatedAt": zod.coerce.date(),
+  "attachments": zod.array(zod.object({
+  "id": zod.number(),
+  "pageId": zod.number(),
+  "fileUrl": zod.string(),
+  "fileName": zod.string(),
+  "createdAt": zod.coerce.date()
+})).optional()
+})
+
+
+/**
+ * @summary Delete a custom page (admin only)
+ */
+export const DeleteCustomPageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteCustomPageResponse = zod.void()
+
+
+/**
+ * @summary Add a file attachment to a custom page (admin only)
+ */
+export const AddCustomPageAttachmentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AddCustomPageAttachmentBody = zod.object({
+  "fileUrl": zod.string(),
+  "fileName": zod.string()
+})
+
+export const AddCustomPageAttachmentResponse = zod.object({
+  "id": zod.number(),
+  "pageId": zod.number(),
+  "fileUrl": zod.string(),
+  "fileName": zod.string(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a custom page attachment (admin only)
+ */
+export const DeleteCustomPageAttachmentParams = zod.object({
+  "id": zod.coerce.number(),
+  "attachmentId": zod.coerce.number()
+})
+
+export const DeleteCustomPageAttachmentResponse = zod.void()
+
+
+/**
  * @summary List fee structures
  */
 export const ListFeeStructuresQueryParams = zod.object({

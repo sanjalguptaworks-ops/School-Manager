@@ -30,6 +30,12 @@ tags:
     description: Fee management
   - name: dashboard
     description: Dashboard and analytics
+  - name: galleries
+    description: Photo galleries
+  - name: polls
+    description: Parent/student polls
+  - name: custom-pages
+    description: Admin-authored static content pages
 
 paths:
   /healthz:
@@ -703,6 +709,344 @@ paths:
         "204":
           description: Deleted
 
+  # ── Galleries ─────────────────────────────────────────────────────────────
+  /galleries:
+    get:
+      operationId: listGalleryAlbums
+      tags: [galleries]
+      summary: List gallery albums
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+        - name: studentId
+          in: query
+          description: For a parent with multiple children, which child's class to scope to
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Gallery albums
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GalleryAlbum"
+    post:
+      operationId: createGalleryAlbum
+      tags: [galleries]
+      summary: Create a gallery album (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryAlbumInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryAlbum"
+
+  /galleries/{id}:
+    get:
+      operationId: getGalleryAlbum
+      tags: [galleries]
+      summary: Get a gallery album with its photos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Gallery album
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryAlbumDetail"
+    delete:
+      operationId: deleteGalleryAlbum
+      tags: [galleries]
+      summary: Delete a gallery album (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /galleries/{id}/photos:
+    post:
+      operationId: addGalleryPhotos
+      tags: [galleries]
+      summary: Add photos to an album (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGalleryPhotosInput"
+      responses:
+        "201":
+          description: Photos added
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GalleryPhoto"
+
+  /galleries/{id}/photos/{photoId}:
+    delete:
+      operationId: deleteGalleryPhoto
+      tags: [galleries]
+      summary: Delete a photo from an album (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Polls ─────────────────────────────────────────────────────────────────
+  /polls:
+    get:
+      operationId: listPolls
+      tags: [polls]
+      summary: List polls
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+        - name: studentId
+          in: query
+          description: For a parent with multiple children, which child's class to scope to
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Polls
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Poll"
+    post:
+      operationId: createPoll
+      tags: [polls]
+      summary: Create a poll (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Poll"
+
+  /polls/{id}:
+    delete:
+      operationId: deletePoll
+      tags: [polls]
+      summary: Delete a poll (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /polls/{id}/vote:
+    post:
+      operationId: votePoll
+      tags: [polls]
+      summary: Cast a vote on a poll
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VotePollInput"
+      responses:
+        "200":
+          description: Updated poll with results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Poll"
+
+  # ── Custom Pages ──────────────────────────────────────────────────────────
+  /custom-pages:
+    get:
+      operationId: listCustomPages
+      tags: [custom-pages]
+      summary: List custom pages
+      responses:
+        "200":
+          description: Custom pages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomPage"
+    post:
+      operationId: createCustomPage
+      tags: [custom-pages]
+      summary: Create a custom page (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomPageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomPage"
+
+  /custom-pages/{id}:
+    get:
+      operationId: getCustomPage
+      tags: [custom-pages]
+      summary: Get a custom page with its attachments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Custom page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomPage"
+    patch:
+      operationId: updateCustomPage
+      tags: [custom-pages]
+      summary: Update a custom page (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomPageInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomPage"
+    delete:
+      operationId: deleteCustomPage
+      tags: [custom-pages]
+      summary: Delete a custom page (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /custom-pages/{id}/attachments:
+    post:
+      operationId: addCustomPageAttachment
+      tags: [custom-pages]
+      summary: Add a file attachment to a custom page (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCustomPageAttachmentInput"
+      responses:
+        "201":
+          description: Attachment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomPageAttachment"
+
+  /custom-pages/{id}/attachments/{attachmentId}:
+    delete:
+      operationId: deleteCustomPageAttachment
+      tags: [custom-pages]
+      summary: Delete a custom page attachment (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   # ── Fees ──────────────────────────────────────────────────────────────────
   /fee-structures:
     get:
@@ -1287,6 +1631,205 @@ components:
           enum: [all, students, parents, teachers, admin]
         classId:
           type: integer
+
+    # ── Galleries ─────────────────────────────────────────────────────────
+    GalleryPhoto:
+      type: object
+      required: [id, albumId, imageUrl, createdAt]
+      properties:
+        id:
+          type: integer
+        albumId:
+          type: integer
+        imageUrl:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    GalleryAlbum:
+      type: object
+      required: [id, title, albumDate, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        albumDate:
+          type: string
+        classId:
+          type: ["integer", "null"]
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        photoCount:
+          type: integer
+        coverPhotoUrl:
+          type: ["string", "null"]
+
+    GalleryAlbumDetail:
+      allOf:
+        - $ref: "#/components/schemas/GalleryAlbum"
+        - type: object
+          required: [photos]
+          properties:
+            photos:
+              type: array
+              items:
+                $ref: "#/components/schemas/GalleryPhoto"
+
+    GalleryAlbumInput:
+      type: object
+      required: [title, albumDate]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        albumDate:
+          type: string
+        classId:
+          type: integer
+        imageUrls:
+          type: array
+          items:
+            type: string
+
+    AddGalleryPhotosInput:
+      type: object
+      required: [imageUrls]
+      properties:
+        imageUrls:
+          type: array
+          items:
+            type: string
+
+    # ── Polls ─────────────────────────────────────────────────────────────
+    PollOptionResult:
+      type: object
+      required: [id, text, voteCount]
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        voteCount:
+          type: integer
+
+    Poll:
+      type: object
+      required: [id, question, createdAt, options, totalVotes, hasVoted]
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        classId:
+          type: ["integer", "null"]
+        createdBy:
+          type: ["integer", "null"]
+        closesAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollOptionResult"
+        totalVotes:
+          type: integer
+        hasVoted:
+          type: boolean
+        myOptionId:
+          type: ["integer", "null"]
+
+    PollInput:
+      type: object
+      required: [question, options]
+      properties:
+        question:
+          type: string
+          minLength: 1
+        classId:
+          type: integer
+        closesAt:
+          type: string
+          format: date-time
+        options:
+          type: array
+          minItems: 2
+          items:
+            type: string
+
+    VotePollInput:
+      type: object
+      required: [optionId]
+      properties:
+        optionId:
+          type: integer
+
+    # ── Custom Pages ────────────────────────────────────────────────────────
+    CustomPageAttachment:
+      type: object
+      required: [id, pageId, fileUrl, fileName, createdAt]
+      properties:
+        id:
+          type: integer
+        pageId:
+          type: integer
+        fileUrl:
+          type: string
+        fileName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CustomPage:
+      type: object
+      required: [id, title, body, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomPageAttachment"
+
+    CustomPageInput:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        body:
+          type: string
+          minLength: 1
+
+    AddCustomPageAttachmentInput:
+      type: object
+      required: [fileUrl, fileName]
+      properties:
+        fileUrl:
+          type: string
+        fileName:
+          type: string
 
     # ── Fee ───────────────────────────────────────────────────────────────
     FeeStructure:

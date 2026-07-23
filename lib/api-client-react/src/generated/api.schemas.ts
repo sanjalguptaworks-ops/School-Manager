@@ -323,6 +323,110 @@ export interface NoticeInput {
   classId?: number;
 }
 
+export interface GalleryPhoto {
+  id: number;
+  albumId: number;
+  imageUrl: string;
+  createdAt: string;
+}
+
+export interface GalleryAlbum {
+  id: number;
+  title: string;
+  albumDate: string;
+  /** @nullable */
+  classId?: number | null;
+  /** @nullable */
+  createdBy?: number | null;
+  createdAt: string;
+  photoCount?: number;
+  /** @nullable */
+  coverPhotoUrl?: string | null;
+}
+
+export type GalleryAlbumDetail = GalleryAlbum & {
+  photos: GalleryPhoto[];
+};
+
+export interface GalleryAlbumInput {
+  /** @minLength 1 */
+  title: string;
+  albumDate: string;
+  classId?: number;
+  imageUrls?: string[];
+}
+
+export interface AddGalleryPhotosInput {
+  imageUrls: string[];
+}
+
+export interface PollOptionResult {
+  id: number;
+  text: string;
+  voteCount: number;
+}
+
+export interface Poll {
+  id: number;
+  question: string;
+  /** @nullable */
+  classId?: number | null;
+  /** @nullable */
+  createdBy?: number | null;
+  /** @nullable */
+  closesAt?: string | null;
+  createdAt: string;
+  options: PollOptionResult[];
+  totalVotes: number;
+  hasVoted: boolean;
+  /** @nullable */
+  myOptionId?: number | null;
+}
+
+export interface PollInput {
+  /** @minLength 1 */
+  question: string;
+  classId?: number;
+  closesAt?: string;
+  /** @minItems 2 */
+  options: string[];
+}
+
+export interface VotePollInput {
+  optionId: number;
+}
+
+export interface CustomPageAttachment {
+  id: number;
+  pageId: number;
+  fileUrl: string;
+  fileName: string;
+  createdAt: string;
+}
+
+export interface CustomPage {
+  id: number;
+  title: string;
+  body: string;
+  /** @nullable */
+  createdBy?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments?: CustomPageAttachment[];
+}
+
+export interface CustomPageInput {
+  /** @minLength 1 */
+  title: string;
+  /** @minLength 1 */
+  body: string;
+}
+
+export interface AddCustomPageAttachmentInput {
+  fileUrl: string;
+  fileName: string;
+}
+
 export interface FeeStructure {
   id: number;
   classId: number;
@@ -429,6 +533,22 @@ studentId?: number;
 export type ListNoticesParams = {
 classId?: number;
 targetRole?: string;
+};
+
+export type ListGalleryAlbumsParams = {
+classId?: number;
+/**
+ * For a parent with multiple children, which child's class to scope to
+ */
+studentId?: number;
+};
+
+export type ListPollsParams = {
+classId?: number;
+/**
+ * For a parent with multiple children, which child's class to scope to
+ */
+studentId?: number;
 };
 
 export type ListFeeStructuresParams = {

@@ -43,6 +43,11 @@ import AnalyticsPage from '@/pages/analytics/index';
 import MessagesPage from '@/pages/messages/index';
 import AdmissionsPage from '@/pages/admissions/index';
 import AuditLogPage from '@/pages/audit-log/index';
+import GalleryPage from '@/pages/gallery/index';
+import GalleryDetailPage from '@/pages/gallery/detail';
+import PollsPage from '@/pages/polls/index';
+import CustomPagesPage from '@/pages/custom-pages/index';
+import CustomPageDetailPage from '@/pages/custom-pages/detail';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -190,6 +195,11 @@ function Router() {
       <Route path="/messages/:id?"><ProtectedRoute component={MessagesPage} /></Route>
       <Route path="/admissions"><ProtectedRoute component={AdmissionsPage} /></Route>
       <Route path="/audit-log"><ProtectedRoute component={AuditLogPage} /></Route>
+      <Route path="/gallery"><ProtectedRoute component={GalleryPage} /></Route>
+      <Route path="/gallery/:id"><ProtectedRoute component={GalleryDetailPage} /></Route>
+      <Route path="/polls"><ProtectedRoute component={PollsPage} /></Route>
+      <Route path="/custom-pages"><ProtectedRoute component={CustomPagesPage} /></Route>
+      <Route path="/custom-pages/:id"><ProtectedRoute component={CustomPageDetailPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

@@ -2,7 +2,8 @@ import { db, usersTable, studentsTable, parentStudentsTable, notificationsTable 
 import { eq, and } from "drizzle-orm";
 import { sendBulkNotificationEmail } from "./mailer";
 import { sendBulkSms } from "./sms";
-import { isEmailEnabledForSchool, isSmsEnabledForSchool } from "./school-settings";
+import { sendBulkWhatsapp } from "./whatsapp";
+import { isEmailEnabledForSchool, isSmsEnabledForSchool, isWhatsappEnabledForSchool } from "./school-settings";
 
 const APP_NAME = "EduCore";
 
@@ -49,6 +50,29 @@ async function getClassRecipients(classId: number): Promise<Contact[]> {
   return Array.from(byUserId.values());
 }
 
+// A single student's own contact + every parent linked to them -- used for
+// reminders about that student's own record (e.g. their pending fee), where
+// a whole-class blast would wrongly notify families with nothing outstanding.
+async function getStudentContacts(studentId: number): Promise<Contact[]> {
+  const byUserId = new Map<number, Contact>();
+
+  const studentRow = await db
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
+    .from(studentsTable)
+    .innerJoin(usersTable, eq(studentsTable.userId, usersTable.id))
+    .where(eq(studentsTable.id, studentId));
+  studentRow.forEach((r) => byUserId.set(r.userId, r));
+
+  const parentRows = await db
+    .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
+    .from(parentStudentsTable)
+    .innerJoin(usersTable, eq(parentStudentsTable.parentId, usersTable.id))
+    .where(eq(parentStudentsTable.studentId, studentId));
+  parentRows.forEach((r) => byUserId.set(r.userId, r));
+
+  return Array.from(byUserId.values());
+}
+
 async function getClassStudentRecipients(classId: number): Promise<Contact[]> {
   return db
     .select({ userId: usersTable.id, email: usersTable.email, phone: usersTable.phone })
@@ -90,9 +114,10 @@ async function resolveNoticeRecipients(targetRole: string, classId: number | nul
 }
 
 // Sends email (if the school has it enabled), SMS (if the school has opted
-// in and a provider is configured -- see lib/sms.ts), and always writes an
-// in-app notification row (the bell-icon feed isn't gated by either toggle,
-// since it costs nothing and isn't an external channel).
+// in and a provider is configured -- see lib/sms.ts), WhatsApp (same opt-in
+// gating, see lib/whatsapp.ts), and always writes an in-app notification row
+// (the bell-icon feed isn't gated by either toggle, since it costs nothing
+// and isn't an external channel).
 async function dispatch(
   schoolId: number,
   contacts: Contact[],
@@ -102,7 +127,11 @@ async function dispatch(
   smsBody: string,
   inApp: { title: string; body: string; link?: string },
 ): Promise<void> {
-  const [emailEnabled, smsEnabled] = await Promise.all([isEmailEnabledForSchool(schoolId), isSmsEnabledForSchool(schoolId)]);
+  const [emailEnabled, smsEnabled, whatsappEnabled] = await Promise.all([
+    isEmailEnabledForSchool(schoolId),
+    isSmsEnabledForSchool(schoolId),
+    isWhatsappEnabledForSchool(schoolId),
+  ]);
 
   if (emailEnabled) {
     const emails = contacts.map((c) => c.email);
@@ -112,6 +141,11 @@ async function dispatch(
   if (smsEnabled) {
     const phones = contacts.filter((c): c is Contact & { phone: string } => !!c.phone).map((c) => c.phone);
     if (phones.length > 0) await sendBulkSms(phones, smsBody);
+  }
+
+  if (whatsappEnabled) {
+    const phones = contacts.filter((c): c is Contact & { phone: string } => !!c.phone).map((c) => c.phone);
+    if (phones.length > 0) await sendBulkWhatsapp(phones, smsBody);
   }
 
   if (contacts.length > 0) {
@@ -365,5 +399,60 @@ export async function notifyNewMessage(
     });
   } catch (err) {
     console.error("Failed to write new-message notification", err);
+  }
+}
+
+// Reminder for one student's specific still-pending fee payment -- targeted
+// at that student + their parents only (see getStudentContacts), unlike
+// notifyFeeDue which blasts the whole class when a fee is first assigned.
+export async function notifyFeeReminder(
+  fp: { studentId: number; term: string; amount: string; dueDate: string },
+  schoolId: number,
+): Promise<void> {
+  try {
+    const contacts = await getStudentContacts(fp.studentId);
+    if (contacts.length === 0) return;
+
+    const subjectLine = `Fee due soon: ${fp.term} — ₹${fp.amount}`;
+    const text = `Reminder: a fee payment is due soon.\n\nTerm: ${fp.term}\nAmount: ₹${fp.amount}\nDue date: ${fp.dueDate}\n\nPlease log in to EduCore to pay.\n\n— ${APP_NAME}`;
+    const html = `<p>Reminder: a fee payment is due soon.</p><ul><li><b>Term:</b> ${escapeHtml(
+      fp.term,
+    )}</li><li><b>Amount:</b> ₹${fp.amount}</li><li><b>Due date:</b> ${
+      fp.dueDate
+    }</li></ul><p>Please log in to EduCore to pay.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    const smsBody = `${APP_NAME}: Fee due soon - ${fp.term} ₹${fp.amount}, due ${fp.dueDate}.`;
+
+    await dispatch(schoolId, contacts, subjectLine, text, html, smsBody, {
+      title: `Fee due soon: ${fp.term}`,
+      body: `₹${fp.amount}, due ${fp.dueDate}`,
+      link: "/fees",
+    });
+  } catch (err) {
+    console.error("Failed to send fee reminder notifications", err);
+  }
+}
+
+// Birthday shoutout to the whole class (see getClassRecipients), same
+// reasoning as notifyNewGalleryAlbum -- a class-wide celebration, not just a
+// note to the birthday student.
+export async function notifyBirthday(
+  student: { name: string; classId: number },
+  schoolId: number,
+): Promise<void> {
+  try {
+    const contacts = await getClassRecipients(student.classId);
+    if (contacts.length === 0) return;
+
+    const text = `Happy Birthday, ${student.name}! 🎉\n\n— ${APP_NAME}`;
+    const html = `<p>Happy Birthday, <strong>${escapeHtml(student.name)}</strong>! 🎉</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    const smsBody = `${APP_NAME}: Happy Birthday, ${student.name}!`.slice(0, 300);
+
+    await dispatch(schoolId, contacts, `Happy Birthday, ${student.name}!`, text, html, smsBody, {
+      title: "Happy Birthday!",
+      body: `It's ${student.name}'s birthday today 🎉`,
+      link: "/dashboard",
+    });
+  } catch (err) {
+    console.error("Failed to send birthday notifications", err);
   }
 }

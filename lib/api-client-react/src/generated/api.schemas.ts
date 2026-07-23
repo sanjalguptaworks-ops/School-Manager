@@ -219,6 +219,57 @@ export interface AttendanceUpdate {
   status: AttendanceUpdateStatus;
 }
 
+export type StaffAttendanceRecordStatus = typeof StaffAttendanceRecordStatus[keyof typeof StaffAttendanceRecordStatus];
+
+
+export const StaffAttendanceRecordStatus = {
+  present: 'present',
+  absent: 'absent',
+  late: 'late',
+} as const;
+
+export type StaffAttendanceRecordTeacherUser = {
+  id?: number;
+  name?: string;
+  email?: string;
+  avatarUrl?: string | null;
+};
+
+export type StaffAttendanceRecordTeacher = {
+  id?: number;
+  userId?: number;
+  user?: StaffAttendanceRecordTeacherUser;
+};
+
+export interface StaffAttendanceRecord {
+  id: number;
+  teacherId: number;
+  date: string;
+  status: StaffAttendanceRecordStatus;
+  /** @nullable */
+  markedBy?: number | null;
+  teacher?: StaffAttendanceRecordTeacher;
+}
+
+export type StaffAttendanceBulkInputRecordsItemStatus = typeof StaffAttendanceBulkInputRecordsItemStatus[keyof typeof StaffAttendanceBulkInputRecordsItemStatus];
+
+
+export const StaffAttendanceBulkInputRecordsItemStatus = {
+  present: 'present',
+  absent: 'absent',
+  late: 'late',
+} as const;
+
+export type StaffAttendanceBulkInputRecordsItem = {
+  teacherId: number;
+  status: StaffAttendanceBulkInputRecordsItemStatus;
+};
+
+export interface StaffAttendanceBulkInput {
+  date: string;
+  records: StaffAttendanceBulkInputRecordsItem[];
+}
+
 export interface Exam {
   id: number;
   name: string;
@@ -514,6 +565,22 @@ export interface SubjectTeacher {
   teacherAvatarUrl?: string | null;
 }
 
+export type SearchResultType = typeof SearchResultType[keyof typeof SearchResultType];
+
+
+export const SearchResultType = {
+  student: 'student',
+  teacher: 'teacher',
+  class: 'class',
+} as const;
+
+export interface SearchResult {
+  type: SearchResultType;
+  label: string;
+  sublabel: string;
+  link: string;
+}
+
 export interface Resource {
   id: number;
   title: string;
@@ -687,6 +754,15 @@ date?: string;
 month?: string;
 };
 
+export type ListStaffAttendanceParams = {
+teacherId?: number;
+date?: string;
+/**
+ * YYYY-MM format
+ */
+month?: string;
+};
+
 export type ListExamsParams = {
 classId?: number;
 };
@@ -729,6 +805,10 @@ export type ListSubjectsParams = {
  * For a parent with multiple children, which child's class to scope to
  */
 studentId?: number;
+};
+
+export type SearchParams = {
+q: string;
 };
 
 export type ListResourcesParams = {

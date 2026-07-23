@@ -1,0 +1,21 @@
+name: Daily tasks
+
+# Fires the fee-reminder and birthday-shoutout batch once a day (see
+# POST /internal/daily-tasks in api-server). There's no persistent
+# background-worker process on the single Render web service, so this cron
+# is the trigger instead. Gated by a shared secret since it's not a
+# user-authenticated call.
+on:
+  schedule:
+    - cron: "0 3 * * *" # 08:30 IST
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger daily tasks
+        run: |
+          curl -fsS --max-time 60 -X POST \
+            -H "X-Internal-Secret: ${{ secrets.INTERNAL_TASKS_SECRET }}" \
+            https://api.thinknbuild.in/api/internal/daily-tasks

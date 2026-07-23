@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react";
 import { useAppAuth } from "@/lib/auth-context";
+import { useSelectedChild } from "@/lib/selected-child-context";
 import { useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -32,11 +33,14 @@ import {
   CalendarPlus,
   BookOpenCheck,
   Newspaper,
-  FolderKanban
+  FolderKanban,
+  ClipboardCheck,
+  Users2
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
 import { ChildSwitcher } from "./child-switcher";
+import { GlobalSearch } from "./global-search";
 import { Button } from "../ui/button";
 
 const navConfig = {
@@ -50,6 +54,7 @@ const navConfig = {
     { href: "/teachers", icon: GraduationCap, label: "Teachers" },
     { href: "/classes", icon: BookOpen, label: "Classes" },
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
+    { href: "/staff-attendance", icon: ClipboardCheck, label: "Staff Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/resources", icon: Newspaper, label: "Resources" },
@@ -74,6 +79,7 @@ const navConfig = {
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/students", icon: Users, label: "Students" },
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
+    { href: "/staff-attendance", icon: ClipboardCheck, label: "My Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/resources", icon: Newspaper, label: "Resources" },
@@ -129,6 +135,7 @@ const navConfig = {
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, logout } = useAppAuth();
+  const { children_ } = useSelectedChild();
   const [location, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -175,11 +182,19 @@ export function AppLayout({ children }: { children: ReactNode }) {
           />
         )}
         {user.role === 'teacher' && (
-          <NavItem 
-            href="/profile" 
-            icon={UserCircle} 
-            label="Profile" 
-            isActive={location.startsWith("/profile")} 
+          <NavItem
+            href="/profile"
+            icon={UserCircle}
+            label="Profile"
+            isActive={location.startsWith("/profile")}
+          />
+        )}
+        {user.role === 'parent' && children_.length >= 2 && (
+          <NavItem
+            href="/family"
+            icon={Users2}
+            label="Family Overview"
+            isActive={location.startsWith("/family")}
           />
         )}
       </div>
@@ -248,9 +263,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Desktop Top Bar */}
-        <div className="hidden md:flex items-center justify-end gap-2 px-8 py-2 border-b bg-card/50 print:hidden">
-          <ChildSwitcher />
-          <NotificationBell />
+        <div className="hidden md:flex items-center justify-between gap-2 px-8 py-2 border-b bg-card/50 print:hidden">
+          {(user.role === "admin" || user.role === "teacher") ? <GlobalSearch /> : <div />}
+          <div className="flex items-center gap-2">
+            <ChildSwitcher />
+            <NotificationBell />
+          </div>
         </div>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 print:overflow-visible print:p-0">

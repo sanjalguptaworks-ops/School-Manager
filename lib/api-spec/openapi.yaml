@@ -508,6 +508,58 @@ paths:
               schema:
                 $ref: "#/components/schemas/AttendanceRecord"
 
+  # ── Staff attendance ───────────────────────────────────────────────────────
+  /staff-attendance:
+    get:
+      operationId: listStaffAttendance
+      tags: [staff-attendance]
+      summary: Query staff attendance records (own record only for teachers)
+      parameters:
+        - name: teacherId
+          in: query
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: month
+          in: query
+          description: "YYYY-MM format"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Staff attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffAttendanceRecord"
+
+  /staff-attendance/bulk:
+    post:
+      operationId: markStaffAttendanceBulk
+      tags: [staff-attendance]
+      summary: Mark attendance for all teachers on a date (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffAttendanceBulkInput"
+      responses:
+        "200":
+          description: Upserted records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StaffAttendanceRecord"
+
   # ── Exams ────────────────────────────────────────────────────────────────
   /exams:
     get:
@@ -1183,6 +1235,28 @@ paths:
                 items:
                   $ref: "#/components/schemas/SubjectTeacher"
 
+  # ── Search ────────────────────────────────────────────────────────────────
+  /search:
+    get:
+      operationId: search
+      tags: [search]
+      summary: Cross-entity search across students, teachers, and classes (admin/teacher only)
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+
   # ── Resources ─────────────────────────────────────────────────────────────
   /resources:
     get:
@@ -1745,6 +1819,62 @@ components:
           type: string
           enum: [present, absent, late]
 
+    # ── Staff attendance ──────────────────────────────────────────────────
+    StaffAttendanceRecord:
+      type: object
+      required: [id, teacherId, date, status]
+      properties:
+        id:
+          type: integer
+        teacherId:
+          type: integer
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [present, absent, late]
+        markedBy:
+          type: ["integer", "null"]
+        teacher:
+          type: object
+          properties:
+            id:
+              type: integer
+            userId:
+              type: integer
+            user:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                email:
+                  type: string
+                avatarUrl:
+                  type: string
+                  nullable: true
+
+    StaffAttendanceBulkInput:
+      type: object
+      required: [date, records]
+      properties:
+        date:
+          type: string
+          format: date
+        records:
+          type: array
+          items:
+            type: object
+            required: [teacherId, status]
+            properties:
+              teacherId:
+                type: integer
+              status:
+                type: string
+                enum: [present, absent, late]
+
     # ── Exam ──────────────────────────────────────────────────────────────
     Exam:
       type: object
@@ -2199,6 +2329,21 @@ components:
           type: ["string", "null"]
         teacherAvatarUrl:
           type: ["string", "null"]
+
+    # ── Search ────────────────────────────────────────────────────────────
+    SearchResult:
+      type: object
+      required: [type, label, sublabel, link]
+      properties:
+        type:
+          type: string
+          enum: [student, teacher, class]
+        label:
+          type: string
+        sublabel:
+          type: string
+        link:
+          type: string
 
     Resource:
       type: object

@@ -52,6 +52,8 @@ import AppointmentsPage from '@/pages/appointments/index';
 import SubjectsPage from '@/pages/subjects/index';
 import ResourcesPage from '@/pages/resources/index';
 import LessonPlannerPage from '@/pages/lesson-planner/index';
+import StaffAttendancePage from '@/pages/staff-attendance/index';
+import FamilyPage from '@/pages/family/index';
 import NotificationsPage from '@/pages/notifications/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
@@ -210,6 +212,8 @@ function Router() {
       <Route path="/subjects"><ProtectedRoute component={SubjectsPage} /></Route>
       <Route path="/resources"><ProtectedRoute component={ResourcesPage} /></Route>
       <Route path="/lesson-planner"><ProtectedRoute component={LessonPlannerPage} /></Route>
+      <Route path="/staff-attendance"><ProtectedRoute component={StaffAttendancePage} /></Route>
+      <Route path="/family"><ProtectedRoute component={FamilyPage} /></Route>
       <Route path="/notifications"><ProtectedRoute component={NotificationsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 

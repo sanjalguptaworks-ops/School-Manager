@@ -31,3 +31,4 @@ export * from "./custom-pages";
 export * from "./appointments";
 export * from "./resources";
 export * from "./lesson-plans";
+export * from "./staff-attendance";

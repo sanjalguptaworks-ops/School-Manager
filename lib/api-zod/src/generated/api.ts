@@ -607,6 +607,66 @@ export const UpdateAttendanceResponse = zod.object({
 
 
 /**
+ * @summary Query staff attendance records (own record only for teachers)
+ */
+export const ListStaffAttendanceQueryParams = zod.object({
+  "teacherId": zod.coerce.number().optional(),
+  "date": zod.date().optional(),
+  "month": zod.coerce.string().optional().describe('YYYY-MM format')
+})
+
+export const ListStaffAttendanceResponseItem = zod.object({
+  "id": zod.number(),
+  "teacherId": zod.number(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['present', 'absent', 'late']),
+  "markedBy": zod.number().nullish(),
+  "teacher": zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.number().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "avatarUrl": zod.string().nullish()
+}).optional()
+}).optional()
+})
+export const ListStaffAttendanceResponse = zod.array(ListStaffAttendanceResponseItem)
+
+
+/**
+ * @summary Mark attendance for all teachers on a date (admin only)
+ */
+export const MarkStaffAttendanceBulkBody = zod.object({
+  "date": zod.coerce.date(),
+  "records": zod.array(zod.object({
+  "teacherId": zod.number(),
+  "status": zod.enum(['present', 'absent', 'late'])
+}))
+})
+
+export const MarkStaffAttendanceBulkResponseItem = zod.object({
+  "id": zod.number(),
+  "teacherId": zod.number(),
+  "date": zod.coerce.date(),
+  "status": zod.enum(['present', 'absent', 'late']),
+  "markedBy": zod.number().nullish(),
+  "teacher": zod.object({
+  "id": zod.number().optional(),
+  "userId": zod.number().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "email": zod.string().optional(),
+  "avatarUrl": zod.string().nullish()
+}).optional()
+}).optional()
+})
+export const MarkStaffAttendanceBulkResponse = zod.array(MarkStaffAttendanceBulkResponseItem)
+
+
+/**
  * @summary List exams
  */
 export const ListExamsQueryParams = zod.object({
@@ -1498,6 +1558,22 @@ export const ListSubjectsResponseItem = zod.object({
   "teacherAvatarUrl": zod.string().nullish()
 })
 export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
+
+
+/**
+ * @summary Cross-entity search across students, teachers, and classes (admin/teacher only)
+ */
+export const SearchQueryParams = zod.object({
+  "q": zod.coerce.string()
+})
+
+export const SearchResponseItem = zod.object({
+  "type": zod.enum(['student', 'teacher', 'class']),
+  "label": zod.string(),
+  "sublabel": zod.string(),
+  "link": zod.string()
+})
+export const SearchResponse = zod.array(SearchResponseItem)
 
 
 /**

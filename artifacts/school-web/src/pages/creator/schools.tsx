@@ -35,6 +35,7 @@ interface School {
   suspendedUntil: string | null;
   emailEnabled: boolean;
   smsEnabled: boolean;
+  whatsappEnabled: boolean;
   billingMode: "trial" | "manual" | "auto";
   paidUntil: string | null;
   trialStartedAt: string | null;
@@ -275,6 +276,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
   const [address, setAddress] = useState(school.address || "");
   const [emailEnabled, setEmailEnabled] = useState(school.emailEnabled);
   const [smsEnabled, setSmsEnabled] = useState(school.smsEnabled);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(school.whatsappEnabled);
   const [suspendedFrom, setSuspendedFrom] = useState(school.suspendedFrom || "");
   const [suspendedUntil, setSuspendedUntil] = useState(school.suspendedUntil || "");
   const [discountPercent, setDiscountPercent] = useState(String(school.discountPercent ?? 0));
@@ -291,6 +293,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
       setAddress(school.address || "");
       setEmailEnabled(school.emailEnabled);
       setSmsEnabled(school.smsEnabled);
+      setWhatsappEnabled(school.whatsappEnabled);
       setSuspendedFrom(school.suspendedFrom || "");
       setSuspendedUntil(school.suspendedUntil || "");
       setDiscountPercent(String(school.discountPercent ?? 0));
@@ -344,6 +347,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
           address: address.trim() || null,
           emailEnabled,
           smsEnabled,
+          whatsappEnabled,
           suspendedFrom: suspendedFrom || null,
           suspendedUntil: suspendedUntil || null,
           discountPercent: Number(discountPercent) || 0,
@@ -446,6 +450,13 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
                 <p className="text-xs text-muted-foreground">Notice/exam/fee-due SMS alerts, sent to any contact with a phone number on file</p>
               </div>
               <Switch checked={smsEnabled} onCheckedChange={setSmsEnabled} />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">WhatsApp</p>
+                <p className="text-xs text-muted-foreground">Notice/exam/fee-due WhatsApp alerts, sent to any contact with a phone number on file</p>
+              </div>
+              <Switch checked={whatsappEnabled} onCheckedChange={setWhatsappEnabled} />
             </div>
           </div>
 

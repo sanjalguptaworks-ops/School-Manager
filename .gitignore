@@ -42,6 +42,10 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Local env files (never commit real credentials)
+.env
+.env.*
+
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 

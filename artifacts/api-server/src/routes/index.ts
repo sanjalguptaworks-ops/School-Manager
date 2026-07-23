@@ -34,6 +34,9 @@ import timelineRouter from "./timeline";
 import subjectsRouter from "./subjects";
 import resourcesRouter from "./resources";
 import lessonPlansRouter from "./lesson-plans";
+import staffAttendanceRouter from "./staff-attendance";
+import searchRouter from "./search";
+import dailyTasksRouter from "./daily-tasks";
 
 const router: IRouter = Router();
 
@@ -72,5 +75,8 @@ router.use(timelineRouter);
 router.use(subjectsRouter);
 router.use(resourcesRouter);
 router.use(lessonPlansRouter);
+router.use(staffAttendanceRouter);
+router.use(searchRouter);
+router.use(dailyTasksRouter);
 
 export default router;

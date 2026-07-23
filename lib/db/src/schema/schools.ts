@@ -37,6 +37,9 @@ export const schoolsTable = pgTable("schools", {
   // Placeholder for a future SMS integration -- stored and shown in the
   // creator UI, but nothing currently sends SMS.
   smsEnabled: boolean("sms_enabled").notNull().default(false),
+  // Per-school opt-in for WhatsApp notifications via Twilio (costs money per
+  // message, same reasoning as smsEnabled -- defaults off).
+  whatsappEnabled: boolean("whatsapp_enabled").notNull().default(false),
   // Subscription billing (Razorpay). trialDays is set per school by the
   // creator before the school's first checkout; billingInterval/discountPercent
   // determine which cached Plan (see billingPlansTable) gets used.

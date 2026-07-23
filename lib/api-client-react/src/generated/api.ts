@@ -61,6 +61,7 @@ import type {
   ListNoticesParams,
   ListPollsParams,
   ListResourcesParams,
+  ListStaffAttendanceParams,
   ListStudentsParams,
   ListSubjectsParams,
   ListUsersParams,
@@ -74,6 +75,10 @@ import type {
   PollInput,
   Resource,
   ResourceInput,
+  SearchParams,
+  SearchResult,
+  StaffAttendanceBulkInput,
+  StaffAttendanceRecord,
   Student,
   StudentCreated,
   StudentInput,
@@ -1909,6 +1914,161 @@ export const useUpdateAttendance = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateAttendanceMutationOptions(options));
+    }
+
+export const getListStaffAttendanceUrl = (params?: ListStaffAttendanceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/staff-attendance?${stringifiedParams}` : `/api/staff-attendance`
+}
+
+/**
+ * @summary Query staff attendance records (own record only for teachers)
+ */
+export const listStaffAttendance = async (params?: ListStaffAttendanceParams, options?: RequestInit): Promise<StaffAttendanceRecord[]> => {
+
+  return customFetch<StaffAttendanceRecord[]>(getListStaffAttendanceUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListStaffAttendanceQueryKey = (params?: ListStaffAttendanceParams,) => {
+    return [
+    `/api/staff-attendance`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListStaffAttendanceQueryOptions = <TData = Awaited<ReturnType<typeof listStaffAttendance>>, TError = ErrorType<unknown>>(params?: ListStaffAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStaffAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStaffAttendanceQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStaffAttendance>>> = ({ signal }) => listStaffAttendance(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStaffAttendance>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListStaffAttendanceQueryResult = NonNullable<Awaited<ReturnType<typeof listStaffAttendance>>>
+export type ListStaffAttendanceQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Query staff attendance records (own record only for teachers)
+ */
+
+export function useListStaffAttendance<TData = Awaited<ReturnType<typeof listStaffAttendance>>, TError = ErrorType<unknown>>(
+ params?: ListStaffAttendanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listStaffAttendance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListStaffAttendanceQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getMarkStaffAttendanceBulkUrl = () => {
+
+
+
+
+  return `/api/staff-attendance/bulk`
+}
+
+/**
+ * @summary Mark attendance for all teachers on a date (admin only)
+ */
+export const markStaffAttendanceBulk = async (staffAttendanceBulkInput: StaffAttendanceBulkInput, options?: RequestInit): Promise<StaffAttendanceRecord[]> => {
+
+  return customFetch<StaffAttendanceRecord[]>(getMarkStaffAttendanceBulkUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(staffAttendanceBulkInput)
+  }
+);}
+
+
+
+
+
+export const getMarkStaffAttendanceBulkMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markStaffAttendanceBulk>>, TError,{data: BodyType<StaffAttendanceBulkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof markStaffAttendanceBulk>>, TError,{data: BodyType<StaffAttendanceBulkInput>}, TContext> => {
+
+const mutationKey = ['markStaffAttendanceBulk'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markStaffAttendanceBulk>>, {data: BodyType<StaffAttendanceBulkInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  markStaffAttendanceBulk(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MarkStaffAttendanceBulkMutationResult = NonNullable<Awaited<ReturnType<typeof markStaffAttendanceBulk>>>
+    export type MarkStaffAttendanceBulkMutationBody = BodyType<StaffAttendanceBulkInput>
+    export type MarkStaffAttendanceBulkMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark attendance for all teachers on a date (admin only)
+ */
+export const useMarkStaffAttendanceBulk = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markStaffAttendanceBulk>>, TError,{data: BodyType<StaffAttendanceBulkInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof markStaffAttendanceBulk>>,
+        TError,
+        {data: BodyType<StaffAttendanceBulkInput>},
+        TContext
+      > => {
+      return useMutation(getMarkStaffAttendanceBulkMutationOptions(options));
     }
 
 export const getListExamsUrl = (params?: ListExamsParams,) => {
@@ -4456,6 +4616,90 @@ export function useListSubjects<TData = Awaited<ReturnType<typeof listSubjects>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListSubjectsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getSearchUrl = (params: SearchParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/search?${stringifiedParams}` : `/api/search`
+}
+
+/**
+ * @summary Cross-entity search across students, teachers, and classes (admin/teacher only)
+ */
+export const search = async (params: SearchParams, options?: RequestInit): Promise<SearchResult[]> => {
+
+  return customFetch<SearchResult[]>(getSearchUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchQueryKey = (params?: SearchParams,) => {
+    return [
+    `/api/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchQueryOptions = <TData = Awaited<ReturnType<typeof search>>, TError = ErrorType<unknown>>(params: SearchParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof search>>> = ({ signal }) => search(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchQueryResult = NonNullable<Awaited<ReturnType<typeof search>>>
+export type SearchQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Cross-entity search across students, teachers, and classes (admin/teacher only)
+ */
+
+export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ErrorType<unknown>>(
+ params: SearchParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

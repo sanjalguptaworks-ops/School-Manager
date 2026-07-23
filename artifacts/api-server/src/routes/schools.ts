@@ -179,6 +179,7 @@ router.patch("/schools/:id", requireAuth, async (req, res): Promise<void> => {
         logoUrl,
         emailEnabled,
         smsEnabled,
+        whatsappEnabled,
         suspendedFrom,
         suspendedUntil,
         discountPercent,
@@ -194,6 +195,7 @@ router.patch("/schools/:id", requireAuth, async (req, res): Promise<void> => {
       if (logoUrl === null || typeof logoUrl === "string") updates.logoUrl = logoUrl;
       if (typeof emailEnabled === "boolean") updates.emailEnabled = emailEnabled;
       if (typeof smsEnabled === "boolean") updates.smsEnabled = smsEnabled;
+      if (typeof whatsappEnabled === "boolean") updates.whatsappEnabled = whatsappEnabled;
       if (typeof discountPercent === "number") updates.discountPercent = Math.max(0, Math.min(100, Math.round(discountPercent)));
       if (trialDays === null || typeof trialDays === "number") {
         updates.trialDays = trialDays;

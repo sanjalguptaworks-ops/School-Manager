@@ -1501,6 +1501,132 @@ export const ListSubjectsResponse = zod.array(ListSubjectsResponseItem)
 
 
 /**
+ * @summary List class resource/daily-update posts
+ */
+export const ListResourcesQueryParams = zod.object({
+  "classId": zod.coerce.number().optional(),
+  "studentId": zod.coerce.number().optional().describe('For a parent with multiple children, which child\'s class to scope to')
+})
+
+export const ListResourcesResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "groupName": zod.string(),
+  "body": zod.string(),
+  "attachmentUrl": zod.string().nullish(),
+  "classId": zod.number(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListResourcesResponse = zod.array(ListResourcesResponseItem)
+
+
+/**
+ * @summary Create a resource post (admin/teacher)
+ */
+
+
+
+
+export const CreateResourceBody = zod.object({
+  "title": zod.string().min(1),
+  "groupName": zod.string().optional(),
+  "body": zod.string().min(1),
+  "attachmentUrl": zod.string().optional(),
+  "classId": zod.number()
+})
+
+export const CreateResourceResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "groupName": zod.string(),
+  "body": zod.string(),
+  "attachmentUrl": zod.string().nullish(),
+  "classId": zod.number(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a resource post (admin/teacher)
+ */
+export const DeleteResourceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteResourceResponse = zod.void()
+
+
+/**
+ * @summary List lesson plans (staff only)
+ */
+export const ListLessonPlansQueryParams = zod.object({
+  "classId": zod.coerce.number().optional()
+})
+
+export const ListLessonPlansResponseItem = zod.object({
+  "id": zod.number(),
+  "classId": zod.number(),
+  "subject": zod.string(),
+  "planDate": zod.string(),
+  "topic": zod.string(),
+  "content": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+export const ListLessonPlansResponse = zod.array(ListLessonPlansResponseItem)
+
+
+/**
+ * @summary Create a lesson plan (admin/teacher)
+ */
+
+
+
+
+
+export const CreateLessonPlanBody = zod.object({
+  "classId": zod.number(),
+  "subject": zod.string().min(1),
+  "planDate": zod.string(),
+  "topic": zod.string().min(1),
+  "content": zod.string().min(1)
+})
+
+export const CreateLessonPlanResponse = zod.object({
+  "id": zod.number(),
+  "classId": zod.number(),
+  "subject": zod.string(),
+  "planDate": zod.string(),
+  "topic": zod.string(),
+  "content": zod.string(),
+  "createdBy": zod.number().nullish(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Delete a lesson plan (admin/teacher)
+ */
+export const DeleteLessonPlanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteLessonPlanResponse = zod.void()
+
+
+/**
+ * @summary Unread notification counts grouped by category
+ */
+export const GetUnreadNotificationsByCategoryResponseItem = zod.object({
+  "category": zod.string(),
+  "count": zod.number()
+})
+export const GetUnreadNotificationsByCategoryResponse = zod.array(GetUnreadNotificationsByCategoryResponseItem)
+
+
+/**
  * @summary List fee structures
  */
 export const ListFeeStructuresQueryParams = zod.object({

@@ -50,6 +50,9 @@ import CustomPagesPage from '@/pages/custom-pages/index';
 import CustomPageDetailPage from '@/pages/custom-pages/detail';
 import AppointmentsPage from '@/pages/appointments/index';
 import SubjectsPage from '@/pages/subjects/index';
+import ResourcesPage from '@/pages/resources/index';
+import LessonPlannerPage from '@/pages/lesson-planner/index';
+import NotificationsPage from '@/pages/notifications/index';
 import TermsPage from '@/pages/legal/terms';
 import PrivacyPage from '@/pages/legal/privacy';
 import RefundPolicyPage from '@/pages/legal/refund';
@@ -205,6 +208,9 @@ function Router() {
       <Route path="/custom-pages/:id"><ProtectedRoute component={CustomPageDetailPage} /></Route>
       <Route path="/appointments"><ProtectedRoute component={AppointmentsPage} /></Route>
       <Route path="/subjects"><ProtectedRoute component={SubjectsPage} /></Route>
+      <Route path="/resources"><ProtectedRoute component={ResourcesPage} /></Route>
+      <Route path="/lesson-planner"><ProtectedRoute component={LessonPlannerPage} /></Route>
+      <Route path="/notifications"><ProtectedRoute component={NotificationsPage} /></Route>
       <Route path="/creator/schools"><CreatorRoute component={CreatorSchoolsPage} /></Route>
 
       <Route component={NotFound} />

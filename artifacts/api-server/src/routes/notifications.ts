@@ -44,6 +44,43 @@ router.get("/notifications/unread-count", requireAuth, requireSchool, async (req
   }
 });
 
+// GET /notifications/unread-by-category — for a grouped "Updates" screen
+// (Circulars, Resources, Galleries, etc.), derived from each notification's
+// link prefix rather than a separate category column.
+router.get("/notifications/unread-by-category", requireAuth, requireSchool, async (req, res): Promise<void> => {
+  try {
+    const authUserId = (req as any).authUserId;
+    const rows = await db
+      .select({
+        category: sql<string>`
+          case
+            when ${notificationsTable.link} like '/notices%' then 'Circulars'
+            when ${notificationsTable.link} like '/resources%' then 'Resources'
+            when ${notificationsTable.link} like '/gallery%' then 'Galleries'
+            when ${notificationsTable.link} like '/polls%' then 'Polls'
+            when ${notificationsTable.link} like '/appointments%' then 'Appointments'
+            when ${notificationsTable.link} like '/leave-requests%' then 'Leave Requests'
+            when ${notificationsTable.link} like '/fees%' then 'Fees'
+            when ${notificationsTable.link} like '/exams%' then 'Exams'
+            when ${notificationsTable.link} like '/messages%' then 'Messages'
+            when ${notificationsTable.link} like '/events%' then 'Events'
+            else 'Other'
+          end
+        `,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(notificationsTable)
+      .where(and(eq(notificationsTable.userId, authUserId), eq(notificationsTable.read, false)))
+      .groupBy(sql`1`)
+      .orderBy(sql`2 desc`);
+
+    res.json(rows);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // PATCH /notifications/:id/read — mark one's own notification read
 router.patch("/notifications/:id/read", requireAuth, requireSchool, async (req, res): Promise<void> => {
   try {

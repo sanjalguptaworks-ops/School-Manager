@@ -30,11 +30,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useAppAuth } from "@/lib/auth-context";
-import { CalendarClock, Plus, Check, X } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarClock, Plus, Check, X, ChevronLeft, ChevronRight, List } from "lucide-react";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  isToday,
+  addMonths,
+  subMonths,
+} from "date-fns";
 
 const STATUS_STYLES: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-200",
@@ -44,6 +57,9 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function AppointmentsPage() {
   const { user } = useAppAuth();
+  const [view, setView] = useState<"list" | "calendar">("list");
+  const [monthDate, setMonthDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const { data: appointments, isLoading } = useListAppointments();
   const updateStatus = useUpdateAppointmentStatus();
   const queryClient = useQueryClient();
@@ -62,6 +78,46 @@ export default function AppointmentsPage() {
     );
   };
 
+  const renderCard = (appt: any) => (
+    <Card key={appt.id} className="shadow-sm border-border/50">
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-medium">{appt.subject}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {user?.role === "parent" ? `with ${appt.teacher?.name}` : `${appt.parent?.name} (re: ${appt.student?.rollNo})`}
+            </p>
+          </div>
+          <Badge variant="outline" className={STATUS_STYLES[appt.status]}>{appt.status}</Badge>
+        </div>
+        <p className="text-sm">{format(new Date(appt.scheduledAt), "EEEE, MMM d, yyyy 'at' h:mm a")}</p>
+        {appt.reason && <p className="text-sm text-muted-foreground">{appt.reason}</p>}
+        {appt.status === "pending" && user?.role === "teacher" && appt.teacherId === user.id && (
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" onClick={() => handleStatusChange(appt.id, "confirmed")}>
+              <Check className="w-3.5 h-3.5 mr-1.5" /> Confirm
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleStatusChange(appt.id, "cancelled")}>
+              <X className="w-3.5 h-3.5 mr-1.5" /> Decline
+            </Button>
+          </div>
+        )}
+        {appt.status === "pending" && user?.role === "parent" && appt.parentId === user.id && (
+          <div className="pt-1">
+            <Button size="sm" variant="outline" onClick={() => handleStatusChange(appt.id, "cancelled")}>
+              Cancel request
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const gridStart = startOfWeek(startOfMonth(monthDate));
+  const gridEnd = endOfWeek(endOfMonth(monthDate));
+  const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
+  const apptsByDay = (day: Date) => (appointments ?? []).filter((a) => isSameDay(new Date(a.scheduledAt), day));
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -72,54 +128,77 @@ export default function AppointmentsPage() {
         {user?.role === "parent" && <FixAppointmentDialog />}
       </div>
 
+      <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
+        <TabsList>
+          <TabsTrigger value="list" className="gap-1.5"><List className="w-3.5 h-3.5" /> List</TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1.5"><CalendarClock className="w-3.5 h-3.5" /> Calendar</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)}
         </div>
-      ) : appointments?.length === 0 ? (
-        <Card className="p-8 text-center border-dashed">
-          <CalendarClock className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-          <p className="font-semibold text-lg mb-1">No appointments yet</p>
-          <p className="text-muted-foreground text-sm">
-            {user?.role === "parent" ? "Request a meeting with a teacher to get started." : "Requests from parents will appear here."}
-          </p>
-        </Card>
+      ) : view === "list" ? (
+        appointments?.length === 0 ? (
+          <Card className="p-8 text-center border-dashed">
+            <CalendarClock className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+            <p className="font-semibold text-lg mb-1">No appointments yet</p>
+            <p className="text-muted-foreground text-sm">
+              {user?.role === "parent" ? "Request a meeting with a teacher to get started." : "Requests from parents will appear here."}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-3">{appointments?.map(renderCard)}</div>
+        )
       ) : (
-        <div className="space-y-3">
-          {appointments?.map((appt) => (
-            <Card key={appt.id} className="shadow-sm border-border/50">
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium">{appt.subject}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {user?.role === "parent" ? `with ${appt.teacher?.name}` : `${appt.parent?.name} (re: ${appt.student?.rollNo})`}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className={STATUS_STYLES[appt.status]}>{appt.status}</Badge>
-                </div>
-                <p className="text-sm">{format(new Date(appt.scheduledAt), "EEEE, MMM d, yyyy 'at' h:mm a")}</p>
-                {appt.reason && <p className="text-sm text-muted-foreground">{appt.reason}</p>}
-                {appt.status === "pending" && user?.role === "teacher" && appt.teacherId === user.id && (
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" onClick={() => handleStatusChange(appt.id, "confirmed")}>
-                      <Check className="w-3.5 h-3.5 mr-1.5" /> Confirm
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleStatusChange(appt.id, "cancelled")}>
-                      <X className="w-3.5 h-3.5 mr-1.5" /> Decline
-                    </Button>
-                  </div>
-                )}
-                {appt.status === "pending" && user?.role === "parent" && appt.parentId === user.id && (
-                  <div className="pt-1">
-                    <Button size="sm" variant="outline" onClick={() => handleStatusChange(appt.id, "cancelled")}>
-                      Cancel request
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-4">
+          <Card className="shadow-sm border-border/50">
+            <CardContent className="p-4 sm:p-6 space-y-3">
+              <div className="flex items-center justify-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => setMonthDate((m) => subMonths(m, 1))}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <p className="font-semibold w-36 text-center">{format(monthDate, "MMMM yyyy")}</p>
+                <Button variant="ghost" size="icon" onClick={() => setMonthDate((m) => addMonths(m, 1))}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
+                ))}
+                {days.map((day) => {
+                  const dayAppts = apptsByDay(day);
+                  const inMonth = isSameMonth(day, monthDate);
+                  const isSelected = selectedDay && isSameDay(day, selectedDay);
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      onClick={() => setSelectedDay(day)}
+                      className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs sm:text-sm gap-0.5 transition-colors ${
+                        !inMonth ? "text-muted-foreground/30" : "text-foreground hover:bg-muted"
+                      } ${isSelected ? "ring-2 ring-primary" : ""} ${isToday(day) ? "font-bold" : ""}`}
+                    >
+                      {format(day, "d")}
+                      {dayAppts.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {selectedDay && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">{format(selectedDay, "EEEE, MMMM d, yyyy")}</p>
+              {apptsByDay(selectedDay).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No appointments on this day.</p>
+              ) : (
+                apptsByDay(selectedDay).map(renderCard)
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -205,6 +205,28 @@ export async function notifyNewPoll(
   }
 }
 
+export async function notifyNewResource(
+  resource: { title: string; classId: number },
+  schoolId: number,
+): Promise<void> {
+  try {
+    const contacts = await getClassRecipients(resource.classId);
+    if (contacts.length === 0) return;
+
+    const text = `New update posted: ${resource.title}\n\n— ${APP_NAME}`;
+    const html = `<p>New update posted: <strong>${escapeHtml(resource.title)}</strong></p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    const smsBody = `${APP_NAME}: New update - ${resource.title}`.slice(0, 300);
+
+    await dispatch(schoolId, contacts, `New update: ${resource.title}`, text, html, smsBody, {
+      title: "New update posted",
+      body: resource.title,
+      link: "/resources",
+    });
+  } catch (err) {
+    console.error("Failed to send resource notifications", err);
+  }
+}
+
 export async function notifyNewExam(
   exam: {
     name: string;

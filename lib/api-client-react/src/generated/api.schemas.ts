@@ -514,6 +514,57 @@ export interface SubjectTeacher {
   teacherAvatarUrl?: string | null;
 }
 
+export interface Resource {
+  id: number;
+  title: string;
+  groupName: string;
+  body: string;
+  /** @nullable */
+  attachmentUrl?: string | null;
+  classId: number;
+  /** @nullable */
+  createdBy?: number | null;
+  createdAt: string;
+}
+
+export interface ResourceInput {
+  /** @minLength 1 */
+  title: string;
+  groupName?: string;
+  /** @minLength 1 */
+  body: string;
+  attachmentUrl?: string;
+  classId: number;
+}
+
+export interface LessonPlan {
+  id: number;
+  classId: number;
+  subject: string;
+  planDate: string;
+  topic: string;
+  content: string;
+  /** @nullable */
+  createdBy?: number | null;
+  createdAt: string;
+}
+
+export interface LessonPlanInput {
+  classId: number;
+  /** @minLength 1 */
+  subject: string;
+  planDate: string;
+  /** @minLength 1 */
+  topic: string;
+  /** @minLength 1 */
+  content: string;
+}
+
+export interface NotificationCategoryCount {
+  category: string;
+  count: number;
+}
+
 export type TimelineItemType = typeof TimelineItemType[keyof typeof TimelineItemType];
 
 
@@ -678,6 +729,18 @@ export type ListSubjectsParams = {
  * For a parent with multiple children, which child's class to scope to
  */
 studentId?: number;
+};
+
+export type ListResourcesParams = {
+classId?: number;
+/**
+ * For a parent with multiple children, which child's class to scope to
+ */
+studentId?: number;
+};
+
+export type ListLessonPlansParams = {
+classId?: number;
 };
 
 export type ListFeeStructuresParams = {

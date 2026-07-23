@@ -44,6 +44,12 @@ tags:
     description: Merged parent/student activity feed
   - name: subjects
     description: Subjects taught to a student's class, and by whom
+  - name: resources
+    description: Structured daily/periodic class updates from a teacher
+  - name: lesson-plans
+    description: Staff-only lesson planning per class/subject/date
+  - name: notifications
+    description: In-app notification center
 
 paths:
   /healthz:
@@ -1177,6 +1183,132 @@ paths:
                 items:
                   $ref: "#/components/schemas/SubjectTeacher"
 
+  # ── Resources ─────────────────────────────────────────────────────────────
+  /resources:
+    get:
+      operationId: listResources
+      tags: [resources]
+      summary: List class resource/daily-update posts
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+        - name: studentId
+          in: query
+          description: For a parent with multiple children, which child's class to scope to
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Resource"
+    post:
+      operationId: createResource
+      tags: [resources]
+      summary: Create a resource post (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+
+  /resources/{id}:
+    delete:
+      operationId: deleteResource
+      tags: [resources]
+      summary: Delete a resource post (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Lesson Plans ──────────────────────────────────────────────────────────
+  /lesson-plans:
+    get:
+      operationId: listLessonPlans
+      tags: [lesson-plans]
+      summary: List lesson plans (staff only)
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lesson plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LessonPlan"
+    post:
+      operationId: createLessonPlan
+      tags: [lesson-plans]
+      summary: Create a lesson plan (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LessonPlanInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonPlan"
+
+  /lesson-plans/{id}:
+    delete:
+      operationId: deleteLessonPlan
+      tags: [lesson-plans]
+      summary: Delete a lesson plan (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /notifications/unread-by-category:
+    get:
+      operationId: getUnreadNotificationsByCategory
+      tags: [notifications]
+      summary: Unread notification counts grouped by category
+      responses:
+        "200":
+          description: Category counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationCategoryCount"
+
   # ── Fees ──────────────────────────────────────────────────────────────────
   /fee-structures:
     get:
@@ -2067,6 +2199,94 @@ components:
           type: ["string", "null"]
         teacherAvatarUrl:
           type: ["string", "null"]
+
+    Resource:
+      type: object
+      required: [id, title, groupName, body, classId, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        groupName:
+          type: string
+        body:
+          type: string
+        attachmentUrl:
+          type: ["string", "null"]
+        classId:
+          type: integer
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    ResourceInput:
+      type: object
+      required: [title, body, classId]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        groupName:
+          type: string
+        body:
+          type: string
+          minLength: 1
+        attachmentUrl:
+          type: string
+        classId:
+          type: integer
+
+    LessonPlan:
+      type: object
+      required: [id, classId, subject, planDate, topic, content, createdAt]
+      properties:
+        id:
+          type: integer
+        classId:
+          type: integer
+        subject:
+          type: string
+        planDate:
+          type: string
+        topic:
+          type: string
+        content:
+          type: string
+        createdBy:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    LessonPlanInput:
+      type: object
+      required: [classId, subject, planDate, topic, content]
+      properties:
+        classId:
+          type: integer
+        subject:
+          type: string
+          minLength: 1
+        planDate:
+          type: string
+        topic:
+          type: string
+          minLength: 1
+        content:
+          type: string
+          minLength: 1
+
+    NotificationCategoryCount:
+      type: object
+      required: [category, count]
+      properties:
+        category:
+          type: string
+        count:
+          type: integer
 
     TimelineItem:
       type: object

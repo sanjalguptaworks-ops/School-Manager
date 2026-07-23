@@ -32,6 +32,8 @@ import customPagesRouter from "./custom-pages";
 import appointmentsRouter from "./appointments";
 import timelineRouter from "./timeline";
 import subjectsRouter from "./subjects";
+import resourcesRouter from "./resources";
+import lessonPlansRouter from "./lesson-plans";
 
 const router: IRouter = Router();
 
@@ -68,5 +70,7 @@ router.use(customPagesRouter);
 router.use(appointmentsRouter);
 router.use(timelineRouter);
 router.use(subjectsRouter);
+router.use(resourcesRouter);
+router.use(lessonPlansRouter);
 
 export default router;

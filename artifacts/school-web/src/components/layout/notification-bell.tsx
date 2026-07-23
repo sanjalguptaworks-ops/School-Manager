@@ -105,6 +105,12 @@ export function NotificationBell() {
             ))
           )}
         </div>
+        <button
+          className="w-full text-center text-xs text-primary hover:underline py-2.5 border-t"
+          onClick={() => { setOpen(false); setLocation("/notifications"); }}
+        >
+          See all updates
+        </button>
       </PopoverContent>
     </Popover>
   );

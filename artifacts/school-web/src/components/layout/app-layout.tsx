@@ -30,7 +30,9 @@ import {
   Vote,
   FolderOpen,
   CalendarPlus,
-  BookOpenCheck
+  BookOpenCheck,
+  Newspaper,
+  FolderKanban
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
@@ -50,6 +52,8 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/resources", icon: Newspaper, label: "Resources" },
+    { href: "/lesson-planner", icon: FolderKanban, label: "Lesson Planner" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
@@ -72,6 +76,8 @@ const navConfig = {
     { href: "/attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/resources", icon: Newspaper, label: "Resources" },
+    { href: "/lesson-planner", icon: FolderKanban, label: "Lesson Planner" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
@@ -89,6 +95,7 @@ const navConfig = {
     { href: "/my-attendance", icon: CalendarCheck, label: "Attendance" },
     { href: "/my-report-card", icon: FileText, label: "Report Card" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/resources", icon: Newspaper, label: "Resources" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
@@ -104,6 +111,7 @@ const navConfig = {
   parent: [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
+    { href: "/resources", icon: Newspaper, label: "Resources" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },

@@ -55,6 +55,17 @@ router.post("/invite", requireAuth, async (req, res): Promise<void> => {
       return;
     }
 
+    if (role === "student") {
+      // classId is client-supplied -- confirm it actually belongs to this
+      // admin's own school before linking a student to it, otherwise a
+      // classId from another tenant would create a cross-school student.
+      const [cls] = await db.select({ id: classesTable.id }).from(classesTable).where(and(eq(classesTable.id, classId), eq(classesTable.schoolId, me.schoolId))).limit(1);
+      if (!cls) {
+        res.status(400).json({ error: "Invalid classId" });
+        return;
+      }
+    }
+
     const normalizedEmail = String(email).toLowerCase();
     const existing = await db
       .select({ id: usersTable.id })

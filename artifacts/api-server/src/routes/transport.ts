@@ -95,6 +95,17 @@ router.delete("/transport/stops/:id", requireAuth, requireSchool, async (req, re
   await requireRole(["admin"], req, res, async () => {
     try {
       const id = parseInt(req.params["id"] as string);
+      const schoolId = (req as any).schoolId;
+      const [stop] = await db
+        .select({ id: transportStopsTable.id })
+        .from(transportStopsTable)
+        .innerJoin(transportRoutesTable, eq(transportStopsTable.routeId, transportRoutesTable.id))
+        .where(and(eq(transportStopsTable.id, id), eq(transportRoutesTable.schoolId, schoolId)))
+        .limit(1);
+      if (!stop) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
       await db.delete(transportStopsTable).where(eq(transportStopsTable.id, id));
       res.json({ ok: true });
     } catch (err) {
@@ -212,6 +223,17 @@ router.delete("/transport/assignments/:studentId", requireAuth, requireSchool, a
   await requireRole(["admin"], req, res, async () => {
     try {
       const studentId = parseInt(req.params["studentId"] as string);
+      const schoolId = (req as any).schoolId;
+      const [student] = await db
+        .select({ id: studentsTable.id })
+        .from(studentsTable)
+        .innerJoin(usersTable, eq(studentsTable.userId, usersTable.id))
+        .where(and(eq(studentsTable.id, studentId), eq(usersTable.schoolId, schoolId)))
+        .limit(1);
+      if (!student) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
       await db.delete(studentTransportTable).where(eq(studentTransportTable.studentId, studentId));
       res.json({ ok: true });
     } catch (err) {

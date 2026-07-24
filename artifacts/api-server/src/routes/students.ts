@@ -321,6 +321,15 @@ router.get("/students/:id/summary", requireAuth, requireSchool, async (req, res)
       return;
     }
 
+    // Same class-scope restriction as GET /students/:id -- otherwise a
+    // teacher restricted to specific classes could bypass it just by
+    // requesting the summary instead of the detail endpoint.
+    const classScope = await getTeacherClassScope(authUserId);
+    if (!canAccessClass(classScope, student.classId)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+
     const today = new Date().toISOString().split("T")[0] as string;
 
     const [attendanceStats, pendingFees, recentMarksRows, upcomingExamsRows] = await Promise.all([

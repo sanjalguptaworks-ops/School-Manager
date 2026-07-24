@@ -94,7 +94,16 @@ router.post("/conversations", requireAuth, requireSchool, async (req, res): Prom
       const { parentUserId } = req.body;
       if (!parentUserId) { res.status(400).json({ error: "parentUserId is required" }); return; }
 
-      const [student] = await db.select({ classId: studentsTable.classId }).from(studentsTable).where(eq(studentsTable.id, studentId)).limit(1);
+      // Scope by schoolId -- otherwise any teacher (unrestricted teachers,
+      // the default for anyone not yet assigned to a class, pass
+      // canAccessClass unconditionally) could message a family in a
+      // different school by supplying that school's studentId.
+      const [student] = await db
+        .select({ classId: studentsTable.classId })
+        .from(studentsTable)
+        .innerJoin(usersTable, eq(studentsTable.userId, usersTable.id))
+        .where(and(eq(studentsTable.id, studentId), eq(usersTable.schoolId, schoolId)))
+        .limit(1);
       if (!student) { res.status(400).json({ error: "Invalid studentId" }); return; }
       const classScope = await getTeacherClassScope(authUserId);
       if (!canAccessClass(classScope, student.classId)) { res.status(403).json({ error: "Forbidden" }); return; }

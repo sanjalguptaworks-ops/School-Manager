@@ -10,7 +10,7 @@ export default function Landing() {
       {/* Header */}
       <header className="px-6 lg:px-12 h-20 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-8 h-8 object-contain" />
+          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-11 h-11 object-contain" />
           <span className="text-2xl font-bold tracking-tight text-foreground">PathshalaHQ</span>
         </div>
         <div className="flex items-center gap-4">
@@ -35,7 +35,7 @@ export default function Landing() {
             The modern standard for schools
           </div>
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-foreground mb-6 leading-tight animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100 fill-mode-both">
-            Run your school with <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">precision</span>.
+            Run your school with <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal-500">precision</span>.
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-both">
             A cohesive platform for administrators, teachers, parents, and students. Say goodbye to scattered spreadsheets and hello to unified clarity.

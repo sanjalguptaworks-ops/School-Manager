@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-muted/30 px-4">
       <div className="bg-white rounded-xl w-[400px] max-w-full border shadow-lg p-8">
         <div className="mb-6 text-center">
-          <img src="/logo.png" alt="PathshalaHQ" className="h-10 mx-auto mb-4 object-contain" />
+          <img src="/logo.png" alt="PathshalaHQ" className="h-16 mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Sign in to PathshalaHQ</h1>
           <p className="text-muted-foreground mt-1 text-sm">Welcome back. Enter your details below.</p>
         </div>

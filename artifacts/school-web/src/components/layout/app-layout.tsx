@@ -169,7 +169,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card border-r w-64 shadow-sm relative z-20">
       <div className="p-6 flex items-center gap-3">
-        <img src={brandLogo} alt={brandName} className="w-8 h-8 rounded object-contain" />
+        <img src={brandLogo} alt={brandName} className="w-11 h-11 rounded object-contain" />
         <h1 className="font-bold text-xl tracking-tight text-foreground truncate">{brandName}</h1>
       </div>
       
@@ -263,7 +263,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 border-b bg-card z-30 print:hidden">
           <div className="flex items-center gap-2 min-w-0">
-            <img src={brandLogo} alt={brandName} className="w-6 h-6 rounded object-contain shrink-0" />
+            <img src={brandLogo} alt={brandName} className="w-8 h-8 rounded object-contain shrink-0" />
             <h1 className="font-bold text-lg truncate">{brandName}</h1>
           </div>
           <div className="flex items-center gap-1">

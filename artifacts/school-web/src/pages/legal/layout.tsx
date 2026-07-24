@@ -8,7 +8,7 @@ export function LegalLayout({ title, updated, children }: { title: string; updat
     <div className="min-h-screen bg-background flex flex-col">
       <header className="px-6 lg:px-12 h-20 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-3">
-          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-8 h-8 object-contain" />
+          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-11 h-11 object-contain" />
           <span className="text-2xl font-bold tracking-tight text-foreground">PathshalaHQ</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">

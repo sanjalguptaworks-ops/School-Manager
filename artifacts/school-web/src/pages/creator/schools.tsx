@@ -418,7 +418,7 @@ function ManageSchoolDialog({ school, onDone }: { school: School; onDone: () => 
                 </Button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Shown in place of the EduCore logo for this school's own users.</p>
+            <p className="text-xs text-muted-foreground">Shown in place of the PathshalaHQ logo for this school's own users.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

@@ -8,8 +8,8 @@ export function LegalLayout({ title, updated, children }: { title: string; updat
     <div className="min-h-screen bg-background flex flex-col">
       <header className="px-6 lg:px-12 h-20 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <Link href="/" className="flex items-center gap-3">
-          <img src={`${basePath}/logo.svg`} alt="EduCore Logo" className="w-8 h-8" />
-          <span className="text-2xl font-bold tracking-tight text-foreground">EduCore</span>
+          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-8 h-8 object-contain" />
+          <span className="text-2xl font-bold tracking-tight text-foreground">PathshalaHQ</span>
         </Link>
         <nav className="flex items-center gap-6 text-sm font-medium text-muted-foreground">
           <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
@@ -29,7 +29,7 @@ export function LegalLayout({ title, updated, children }: { title: string; updat
       </main>
 
       <footer className="py-8 text-center text-muted-foreground text-sm border-t bg-background">
-        &copy; {new Date().getFullYear()} EduCore Inc. Crafted for education.
+        &copy; {new Date().getFullYear()} PathshalaHQ Inc. Crafted for education.
       </footer>
     </div>
   );

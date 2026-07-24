@@ -37,7 +37,7 @@ export default function MyReportCardPage() {
       <div className="hidden print:flex items-center gap-3 mb-2">
         {user?.schoolLogoUrl && <img src={user.schoolLogoUrl} alt="" className="w-10 h-10 object-contain" />}
         <div>
-          <p className="font-bold text-lg">{user?.schoolName || "EduCore"}</p>
+          <p className="font-bold text-lg">{user?.schoolName || "PathshalaHQ"}</p>
           <p className="text-sm text-muted-foreground">Report Card — {data?.student.user?.name}</p>
         </div>
       </div>

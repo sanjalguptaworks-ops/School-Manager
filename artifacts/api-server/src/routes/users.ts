@@ -36,7 +36,7 @@ router.get("/users/me", requireAuth, async (req, res): Promise<void> => {
       extra.teacherId = t?.id ?? null;
     }
     // School branding, so the sidebar can show this school's own logo/name
-    // instead of the generic EduCore mark. Not applicable to creator accounts,
+    // instead of the generic PathshalaHQ mark. Not applicable to creator accounts,
     // which aren't tied to a single school.
     if (user.schoolId) {
       const [school] = await db

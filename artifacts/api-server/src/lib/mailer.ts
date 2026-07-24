@@ -28,11 +28,11 @@ export async function sendWelcomeEmail(to: string, name: string, tempPassword: s
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `EduCore <${from}>`,
+      from: `PathshalaHQ <${from}>`,
       to: [to],
-      subject: "Your EduCore account is ready",
-      text: `Hi ${name},\n\nAn EduCore account has been created for you.\n\nLogin email: ${to}\nTemporary password: ${tempPassword}\n\n${loginUrl ? `Sign in here: ${loginUrl}\n\n` : ""}Please change your password after signing in, from your Profile page.\n\n— EduCore`,
-      html: `<p>Hi ${name},</p><p>An EduCore account has been created for you.</p><ul><li><b>Login email:</b> ${to}</li><li><b>Temporary password:</b> ${tempPassword}</li></ul>${loginUrl ? `<p><a href="${loginUrl}">Sign in here</a></p>` : ""}<p>Please change your password after signing in, from your Profile page.</p><p style="color:#888;font-size:12px">Sent via EduCore</p>`,
+      subject: "Your PathshalaHQ account is ready",
+      text: `Hi ${name},\n\nA PathshalaHQ account has been created for you.\n\nLogin email: ${to}\nTemporary password: ${tempPassword}\n\n${loginUrl ? `Sign in here: ${loginUrl}\n\n` : ""}Please change your password after signing in, from your Profile page.\n\n— PathshalaHQ`,
+      html: `<p>Hi ${name},</p><p>A PathshalaHQ account has been created for you.</p><ul><li><b>Login email:</b> ${to}</li><li><b>Temporary password:</b> ${tempPassword}</li></ul>${loginUrl ? `<p><a href="${loginUrl}">Sign in here</a></p>` : ""}<p>Please change your password after signing in, from your Profile page.</p><p style="color:#888;font-size:12px">Sent via PathshalaHQ</p>`,
     }),
   });
 
@@ -69,11 +69,11 @@ export async function sendPaymentLinkEmail(params: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `EduCore <${from}>`,
+      from: `PathshalaHQ <${from}>`,
       to: [params.to],
       subject: `Payment due for ${params.schoolName} — ₹${params.amountRupees}`,
-      text: `Hi,\n\nA payment of ₹${params.amountRupees} is due for ${params.schoolName} (this ${periodLabel}).\n\nPay here: ${params.paymentUrl}\n\nIf you have auto-pay set up, you can ignore this.\n\n— EduCore`,
-      html: `<p>Hi,</p><p>A payment of <b>₹${params.amountRupees}</b> is due for <b>${params.schoolName}</b> (this ${periodLabel}).</p><p><a href="${params.paymentUrl}">Pay here</a></p><p>If you have auto-pay set up, you can ignore this.</p><p style="color:#888;font-size:12px">Sent via EduCore</p>`,
+      text: `Hi,\n\nA payment of ₹${params.amountRupees} is due for ${params.schoolName} (this ${periodLabel}).\n\nPay here: ${params.paymentUrl}\n\nIf you have auto-pay set up, you can ignore this.\n\n— PathshalaHQ`,
+      html: `<p>Hi,</p><p>A payment of <b>₹${params.amountRupees}</b> is due for <b>${params.schoolName}</b> (this ${periodLabel}).</p><p><a href="${params.paymentUrl}">Pay here</a></p><p>If you have auto-pay set up, you can ignore this.</p><p style="color:#888;font-size:12px">Sent via PathshalaHQ</p>`,
     }),
   });
 
@@ -98,9 +98,9 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `EduCore <${from}>`,
+      from: `PathshalaHQ <${from}>`,
       to: [to],
-      subject: "Reset your EduCore password",
+      subject: "Reset your PathshalaHQ password",
       text: `Click the link below to reset your password. This link expires in 1 hour.\n\n${resetUrl}\n\nIf you didn't request this, you can ignore this email.`,
       html: `<p>Click the link below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
     }),
@@ -153,7 +153,7 @@ export async function sendBulkNotificationEmail(
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ from: `EduCore <${from}>`, to: [to], subject, text, html }),
+          body: JSON.stringify({ from: `PathshalaHQ <${from}>`, to: [to], subject, text, html }),
         }),
       ),
     );
@@ -177,11 +177,11 @@ export async function sendEmailChangeConfirmation(to: string, confirmUrl: string
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `EduCore <${from}>`,
+      from: `PathshalaHQ <${from}>`,
       to: [to],
-      subject: "Confirm your new EduCore email address",
-      text: `Click the link below to confirm this is your new email address for EduCore. This link expires in 1 hour.\n\n${confirmUrl}\n\nIf you didn't request this change, you can ignore this email and your address will stay the same.`,
-      html: `<p>Click the link below to confirm this is your new email address for EduCore. This link expires in 1 hour.</p><p><a href="${confirmUrl}">${confirmUrl}</a></p><p>If you didn't request this change, you can ignore this email and your address will stay the same.</p>`,
+      subject: "Confirm your new PathshalaHQ email address",
+      text: `Click the link below to confirm this is your new email address for PathshalaHQ. This link expires in 1 hour.\n\n${confirmUrl}\n\nIf you didn't request this change, you can ignore this email and your address will stay the same.`,
+      html: `<p>Click the link below to confirm this is your new email address for PathshalaHQ. This link expires in 1 hour.</p><p><a href="${confirmUrl}">${confirmUrl}</a></p><p>If you didn't request this change, you can ignore this email and your address will stay the same.</p>`,
     }),
   });
 

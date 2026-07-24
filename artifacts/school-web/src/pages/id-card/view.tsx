@@ -61,7 +61,7 @@ export default function IdCardViewPage() {
     );
   }
 
-  const schoolName = authUser?.schoolName || "EduCore";
+  const schoolName = authUser?.schoolName || "PathshalaHQ";
   const schoolLogoUrl = authUser?.schoolLogoUrl;
 
   return (

@@ -94,7 +94,7 @@ export async function getOrCreatePlan(
       period: interval === "monthly" ? "monthly" : "yearly",
       interval: 1,
       item: {
-        name: `EduCore tier (${tierMinStudents}+ students, ${interval})`,
+        name: `PathshalaHQ tier (${tierMinStudents}+ students, ${interval})`,
         amount: amountPaise,
         currency: "INR",
       },

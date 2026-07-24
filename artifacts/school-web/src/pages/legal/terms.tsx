@@ -4,14 +4,14 @@ export default function TermsPage() {
   return (
     <LegalLayout title="Terms of Service" updated="July 21, 2026">
       <p>
-        These Terms of Service ("Terms") govern access to and use of EduCore, a school management platform operated
-        by EduCore Inc. ("EduCore", "we", "us"). By creating an account, signing up a school, or otherwise using
-        EduCore, you agree to these Terms on behalf of yourself and, if applicable, the school you represent.
+        These Terms of Service ("Terms") govern access to and use of PathshalaHQ, a school management platform operated
+        by PathshalaHQ Inc. ("PathshalaHQ", "we", "us"). By creating an account, signing up a school, or otherwise using
+        PathshalaHQ, you agree to these Terms on behalf of yourself and, if applicable, the school you represent.
       </p>
 
       <h2>1. Who these Terms apply to</h2>
       <p>
-        EduCore is provided to schools ("Customer") and, through the Customer, to the Customer's administrators,
+        PathshalaHQ is provided to schools ("Customer") and, through the Customer, to the Customer's administrators,
         teachers, students, and parents/guardians ("Users"). The individual or school that signs up is responsible
         for ensuring every User at that school agrees to and complies with these Terms.
       </p>
@@ -26,10 +26,10 @@ export default function TermsPage() {
 
       <h2>3. Subscriptions, trials, and billing</h2>
       <p>
-        New schools receive a free trial period (its length is set by EduCore and shown in your dashboard). After
+        New schools receive a free trial period (its length is set by PathshalaHQ and shown in your dashboard). After
         the trial, continued access requires an active paid subscription. Subscription pricing is based on the
         school's enrolled student count, billed monthly or annually as selected, plus applicable taxes (GST).
-        Payments are processed by Razorpay; EduCore does not store your card or bank details. EduCore may generate
+        Payments are processed by Razorpay; PathshalaHQ does not store your card or bank details. PathshalaHQ may generate
         and send payment requests for a billing period, or a school may set up automatic recurring payment. Access
         may be suspended if a billing period lapses without payment, and restored once payment is received. See our
         <a href="/refund-policy"> Refund &amp; Cancellation Policy</a> for details on refunds and cancellations.
@@ -38,7 +38,7 @@ export default function TermsPage() {
       <h2>4. Acceptable use</h2>
       <p>You agree not to:</p>
       <ul>
-        <li>Use EduCore to store or share content that is unlawful, defamatory, or infringes another's rights;</li>
+        <li>Use PathshalaHQ to store or share content that is unlawful, defamatory, or infringes another's rights;</li>
         <li>Attempt to access another school's data, or any account you are not authorized to access;</li>
         <li>Interfere with, probe, or disrupt the security or availability of the platform;</li>
         <li>Reverse-engineer or resell the platform without our written consent.</li>
@@ -46,31 +46,31 @@ export default function TermsPage() {
 
       <h2>5. Data entered by schools</h2>
       <p>
-        Schools use EduCore to record information about their own students, teachers, and parents, including
-        academic records and, in some cases, information relating to minors. As between EduCore and the school, the
+        Schools use PathshalaHQ to record information about their own students, teachers, and parents, including
+        academic records and, in some cases, information relating to minors. As between PathshalaHQ and the school, the
         school is responsible for having a lawful basis (including any required parental or guardian consent) to
-        collect and enter that information into EduCore. EduCore processes this information on the school's behalf
+        collect and enter that information into PathshalaHQ. PathshalaHQ processes this information on the school's behalf
         as described in our <a href="/privacy">Privacy Policy</a>.
       </p>
 
       <h2>6. Suspension and termination</h2>
       <p>
         We may suspend or terminate access for a school that violates these Terms, does not pay amounts due, or
-        whose use poses a security or legal risk to EduCore or other schools. A school may stop using EduCore at
+        whose use poses a security or legal risk to PathshalaHQ or other schools. A school may stop using PathshalaHQ at
         any time; this does not entitle it to a refund of amounts already paid, except as described in our Refund
         &amp; Cancellation Policy.
       </p>
 
       <h2>7. Availability and changes</h2>
       <p>
-        We aim to keep EduCore available at all times but do not guarantee uninterrupted service. We may update
+        We aim to keep PathshalaHQ available at all times but do not guarantee uninterrupted service. We may update
         these Terms from time to time; continued use after an update means you accept the revised Terms.
       </p>
 
       <h2>8. Disclaimer and limitation of liability</h2>
       <p>
-        EduCore is provided "as is" without warranties of any kind, to the maximum extent permitted by law. To the
-        maximum extent permitted by law, EduCore is not liable for indirect, incidental, or consequential damages
+        PathshalaHQ is provided "as is" without warranties of any kind, to the maximum extent permitted by law. To the
+        maximum extent permitted by law, PathshalaHQ is not liable for indirect, incidental, or consequential damages
         arising from use of the platform.
       </p>
 

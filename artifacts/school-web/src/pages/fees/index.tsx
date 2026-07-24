@@ -468,7 +468,7 @@ function AdminFeeTable() {
 function ReceiptDialog({ payment }: { payment: any }) {
   const { user } = useAppAuth();
   const [open, setOpen] = useState(false);
-  const schoolName = user?.schoolName || "EduCore";
+  const schoolName = user?.schoolName || "PathshalaHQ";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

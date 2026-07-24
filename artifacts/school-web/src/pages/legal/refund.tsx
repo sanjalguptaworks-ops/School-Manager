@@ -6,14 +6,14 @@ export default function RefundPolicyPage() {
       <h2>1. Free trial</h2>
       <p>
         Every new school starts on a free trial (its length is shown in your dashboard). You are not charged during
-        the trial, and you may stop using EduCore at any time before it ends at no cost.
+        the trial, and you may stop using PathshalaHQ at any time before it ends at no cost.
       </p>
 
       <h2>2. Paid subscriptions</h2>
       <p>
         After the trial, continued use requires an active paid subscription, billed monthly or annually based on
         the school's enrolled student count. Payment is due for the billing period it covers before that period
-        begins or, for a payment link sent by EduCore, within the link's validity window.
+        begins or, for a payment link sent by PathshalaHQ, within the link's validity window.
       </p>
 
       <h2>3. Cancellations</h2>
@@ -25,7 +25,7 @@ export default function RefundPolicyPage() {
 
       <h2>4. Refunds</h2>
       <p>
-        Because the trial period exists specifically so a school can evaluate EduCore before paying, subscription
+        Because the trial period exists specifically so a school can evaluate PathshalaHQ before paying, subscription
         fees are generally non-refundable once a paid billing period has begun. If you believe you were charged in
         error — for example, a duplicate charge or a charge after cancellation — contact thinknbuild.in@gmail.com
         within 7 days of the charge and we will review it. Approved refunds are issued to the original payment

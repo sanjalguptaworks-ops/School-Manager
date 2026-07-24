@@ -1,6 +1,6 @@
 {
-  "name": "EduCore",
-  "short_name": "EduCore",
+  "name": "PathshalaHQ",
+  "short_name": "PathshalaHQ",
   "description": "School management for students, parents, teachers, and admins.",
   "start_url": "/dashboard",
   "display": "standalone",
@@ -8,9 +8,9 @@
   "theme_color": "#FF3C00",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/favicon.jpg",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/jpeg",
       "purpose": "any"
     }
   ]

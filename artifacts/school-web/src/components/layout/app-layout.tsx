@@ -155,11 +155,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const navItems = navConfig[user.role as keyof typeof navConfig] || [];
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-  // The creator manages every school, so it keeps the platform's own EduCore
-  // branding; everyone else sees their own school's logo/name once the
-  // creator has set one, falling back to EduCore branding otherwise.
-  const brandLogo = user.role !== "creator" && user.schoolLogoUrl ? user.schoolLogoUrl : `${basePath}/logo.svg`;
-  const brandName = user.role !== "creator" && user.schoolName ? user.schoolName : "EduCore";
+  // The creator manages every school, so it keeps the platform's own
+  // PathshalaHQ branding; everyone else sees their own school's logo/name
+  // once the creator has set one, falling back to PathshalaHQ branding otherwise.
+  const brandLogo = user.role !== "creator" && user.schoolLogoUrl ? user.schoolLogoUrl : `${basePath}/logo.png`;
+  const brandName = user.role !== "creator" && user.schoolName ? user.schoolName : "PathshalaHQ";
 
   const handleLogout = async () => {
     await logout();

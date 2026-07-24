@@ -7,7 +7,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "EduCore", body: "" };
+  let data = { title: "PathshalaHQ", body: "" };
   try {
     if (event.data) data = event.data.json();
   } catch {
@@ -15,9 +15,9 @@ self.addEventListener("push", (event) => {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title || "EduCore", {
+    self.registration.showNotification(data.title || "PathshalaHQ", {
       body: data.body || "",
-      icon: "/favicon.svg",
+      icon: "/favicon.jpg",
       data: { link: data.link || "/dashboard" },
     }),
   );

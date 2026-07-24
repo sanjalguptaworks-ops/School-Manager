@@ -6,7 +6,7 @@ import { sendBulkWhatsapp } from "./whatsapp";
 import { sendWebPush } from "./webpush";
 import { isEmailEnabledForSchool, isSmsEnabledForSchool, isWhatsappEnabledForSchool } from "./school-settings";
 
-const APP_NAME = "EduCore";
+const APP_NAME = "PathshalaHQ";
 
 interface Contact {
   userId: number;
@@ -320,12 +320,12 @@ export async function notifyFeeDue(
     if (contacts.length === 0) return;
 
     const subjectLine = `Fee due: ${fs.term} — ₹${fs.amount}`;
-    const text = `A new fee has been assigned.\n\nTerm: ${fs.term}\nAmount: ₹${fs.amount}\nDue date: ${fs.dueDate}\n\nPlease log in to EduCore to view details.\n\n— ${APP_NAME}`;
+    const text = `A new fee has been assigned.\n\nTerm: ${fs.term}\nAmount: ₹${fs.amount}\nDue date: ${fs.dueDate}\n\nPlease log in to PathshalaHQ to view details.\n\n— ${APP_NAME}`;
     const html = `<p>A new fee has been assigned.</p><ul><li><b>Term:</b> ${escapeHtml(
       fs.term,
     )}</li><li><b>Amount:</b> ₹${fs.amount}</li><li><b>Due date:</b> ${
       fs.dueDate
-    }</li></ul><p>Please log in to EduCore to view details.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    }</li></ul><p>Please log in to PathshalaHQ to view details.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
     const smsBody = `${APP_NAME}: Fee due - ${fs.term} ₹${fs.amount}, due ${fs.dueDate}.`;
 
     await dispatch(schoolId, contacts, subjectLine, text, html, smsBody, {
@@ -426,12 +426,12 @@ export async function notifyFeeReminder(
     if (contacts.length === 0) return;
 
     const subjectLine = `Fee due soon: ${fp.term} — ₹${fp.amount}`;
-    const text = `Reminder: a fee payment is due soon.\n\nTerm: ${fp.term}\nAmount: ₹${fp.amount}\nDue date: ${fp.dueDate}\n\nPlease log in to EduCore to pay.\n\n— ${APP_NAME}`;
+    const text = `Reminder: a fee payment is due soon.\n\nTerm: ${fp.term}\nAmount: ₹${fp.amount}\nDue date: ${fp.dueDate}\n\nPlease log in to PathshalaHQ to pay.\n\n— ${APP_NAME}`;
     const html = `<p>Reminder: a fee payment is due soon.</p><ul><li><b>Term:</b> ${escapeHtml(
       fp.term,
     )}</li><li><b>Amount:</b> ₹${fp.amount}</li><li><b>Due date:</b> ${
       fp.dueDate
-    }</li></ul><p>Please log in to EduCore to pay.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
+    }</li></ul><p>Please log in to PathshalaHQ to pay.</p><p style="color:#888;font-size:12px">Sent via ${APP_NAME}</p>`;
     const smsBody = `${APP_NAME}: Fee due soon - ${fp.term} ₹${fp.amount}, due ${fp.dueDate}.`;
 
     await dispatch(schoolId, contacts, subjectLine, text, html, smsBody, {

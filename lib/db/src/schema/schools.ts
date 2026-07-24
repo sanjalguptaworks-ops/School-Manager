@@ -11,7 +11,7 @@ export const schoolsTable = pgTable("schools", {
   contactEmail: text("contact_email"),
   contactPhone: text("contact_phone"),
   address: text("address"),
-  // School-uploaded branding, shown in place of the generic EduCore mark for
+  // School-uploaded branding, shown in place of the generic PathshalaHQ mark for
   // that school's own users. Only the creator sets this (see routes/schools.ts).
   logoUrl: text("logo_url"),
   // The school's own certificate background/design, uploaded by their admin

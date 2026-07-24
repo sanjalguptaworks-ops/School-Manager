@@ -10,8 +10,8 @@ export default function Landing() {
       {/* Header */}
       <header className="px-6 lg:px-12 h-20 flex items-center justify-between border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <img src={`${basePath}/logo.svg`} alt="EduCore Logo" className="w-8 h-8" />
-          <span className="text-2xl font-bold tracking-tight text-foreground">EduCore</span>
+          <img src={`${basePath}/logo.png`} alt="PathshalaHQ Logo" className="w-8 h-8 object-contain" />
+          <span className="text-2xl font-bold tracking-tight text-foreground">PathshalaHQ</span>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
@@ -84,7 +84,7 @@ export default function Landing() {
           <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
           <Link href="/refund-policy" className="hover:text-primary transition-colors">Refunds</Link>
         </div>
-        <p>&copy; {new Date().getFullYear()} EduCore Inc. Crafted for education.</p>
+        <p>&copy; {new Date().getFullYear()} PathshalaHQ Inc. Crafted for education.</p>
       </footer>
     </div>
   );

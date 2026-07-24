@@ -4,17 +4,17 @@ export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy" updated="July 21, 2026">
       <p>
-        This Privacy Policy explains what information EduCore Inc. ("EduCore", "we") collects through the EduCore
+        This Privacy Policy explains what information PathshalaHQ Inc. ("PathshalaHQ", "we") collects through the PathshalaHQ
         school management platform, how it is used, and the choices available to schools and Users.
       </p>
 
-      <h2>1. Our role: EduCore acts on the school's behalf</h2>
+      <h2>1. Our role: PathshalaHQ acts on the school's behalf</h2>
       <p>
-        A school that signs up for EduCore ("Customer") is the data controller for the student, parent, and staff
-        information it enters into the platform — the school decides what information to collect and why. EduCore
+        A school that signs up for PathshalaHQ ("Customer") is the data controller for the student, parent, and staff
+        information it enters into the platform — the school decides what information to collect and why. PathshalaHQ
         acts as a data processor / service provider, storing and processing that information only to provide the
         platform and only as instructed by the school. If you are a student, parent, or teacher, your school's own
-        policies govern what information about you is entered into EduCore; questions about that data should go to
+        policies govern what information about you is entered into PathshalaHQ; questions about that data should go to
         your school first.
       </p>
 
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         <li>
           <strong>School billing information:</strong> student counts used to determine subscription pricing,
           billing history, and subscription status. Card, UPI, and bank details are collected and processed
-          directly by Razorpay, our payment processor — EduCore does not receive or store them.
+          directly by Razorpay, our payment processor — PathshalaHQ does not receive or store them.
         </li>
         <li>
           <strong>Technical information:</strong> log data such as IP address and timestamps, used for security and
@@ -43,10 +43,10 @@ export default function PrivacyPage() {
 
       <h2>3. Children's information</h2>
       <p>
-        EduCore is used by schools to manage records that include information about students who may be minors.
-        This information is entered and controlled by the school, not collected by EduCore directly from children.
+        PathshalaHQ is used by schools to manage records that include information about students who may be minors.
+        This information is entered and controlled by the school, not collected by PathshalaHQ directly from children.
         Schools are responsible for obtaining any parental or guardian consent required under applicable law before
-        entering a minor's information into EduCore.
+        entering a minor's information into PathshalaHQ.
       </p>
 
       <h2>4. How we use information</h2>

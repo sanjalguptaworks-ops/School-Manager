@@ -19,7 +19,7 @@ async function seed() {
   }
 
   const [school] = await db.insert(schoolsTable).values({
-    name: "EduCore Demo School",
+    name: "PathshalaHQ Demo School",
     status: "approved",
   }).returning();
 

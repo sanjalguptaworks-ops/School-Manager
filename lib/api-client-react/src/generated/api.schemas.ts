@@ -697,6 +697,143 @@ export interface FeePayment {
   feeStructure?: FeeStructure;
 }
 
+export interface LibraryBook {
+  id: number;
+  schoolId: number;
+  title: string;
+  author: string;
+  /** @nullable */
+  isbn?: string | null;
+  totalCopies: number;
+  availableCopies: number;
+  createdAt: string;
+}
+
+export interface LibraryBookInput {
+  title?: string;
+  author?: string;
+  /** @nullable */
+  isbn?: string | null;
+  totalCopies?: number;
+}
+
+export type LibraryLoanBook = {
+  id?: number;
+  title?: string;
+  author?: string;
+};
+
+export type LibraryLoanStudentUser = {
+  id?: number;
+  name?: string;
+};
+
+export type LibraryLoanStudent = {
+  id?: number;
+  rollNo?: string;
+  user?: LibraryLoanStudentUser;
+};
+
+export interface LibraryLoan {
+  id: number;
+  bookId: number;
+  studentId: number;
+  issuedAt: string;
+  dueDate: string;
+  /** @nullable */
+  returnedAt?: string | null;
+  /** @nullable */
+  fineAmount?: string | null;
+  book?: LibraryLoanBook;
+  student?: LibraryLoanStudent;
+}
+
+export interface LibraryLoanInput {
+  bookId: number;
+  studentId: number;
+  dueDate: string;
+}
+
+export interface LibraryLoanReturnInput {
+  fineAmount?: number;
+}
+
+export interface TransportStop {
+  id: number;
+  routeId: number;
+  name: string;
+  order: number;
+  /** @nullable */
+  pickupTime?: string | null;
+  /** @nullable */
+  dropTime?: string | null;
+}
+
+export interface TransportStopInput {
+  name: string;
+  order?: number;
+  /** @nullable */
+  pickupTime?: string | null;
+  /** @nullable */
+  dropTime?: string | null;
+}
+
+export interface TransportRoute {
+  id: number;
+  schoolId: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  stops?: TransportStop[];
+}
+
+export interface TransportRouteInput {
+  name: string;
+  /** @nullable */
+  description?: string | null;
+}
+
+export type TransportAssignmentRoute = {
+  id?: number;
+  name?: string;
+};
+
+export type TransportAssignmentStop = {
+  id?: number;
+  name?: string;
+  /** @nullable */
+  pickupTime?: string | null;
+  /** @nullable */
+  dropTime?: string | null;
+};
+
+export type TransportAssignmentStudentUser = {
+  id?: number;
+  name?: string;
+};
+
+export type TransportAssignmentStudent = {
+  id?: number;
+  rollNo?: string;
+  user?: TransportAssignmentStudentUser;
+};
+
+export interface TransportAssignment {
+  id: number;
+  studentId: number;
+  routeId: number;
+  stopId: number;
+  route?: TransportAssignmentRoute;
+  stop?: TransportAssignmentStop;
+  student?: TransportAssignmentStudent;
+}
+
+export interface TransportAssignmentInput {
+  studentId: number;
+  routeId: number;
+  stopId: number;
+}
+
 export interface DashboardSummary {
   totalStudents: number;
   totalTeachers: number;
@@ -840,6 +977,14 @@ export const ListFeePaymentsStatus = {
   pending: 'pending',
   paid: 'paid',
 } as const;
+
+export type ListLibraryLoansParams = {
+studentId?: number;
+};
+
+export type ListTransportAssignmentsParams = {
+studentId?: number;
+};
 
 export type GetAttendanceSummaryParams = {
 date: string;

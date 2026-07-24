@@ -32,3 +32,6 @@ export * from "./appointments";
 export * from "./resources";
 export * from "./lesson-plans";
 export * from "./staff-attendance";
+export * from "./push-subscriptions";
+export * from "./library";
+export * from "./transport";

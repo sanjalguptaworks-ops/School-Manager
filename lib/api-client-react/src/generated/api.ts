@@ -51,12 +51,18 @@ import type {
   HealthStatus,
   LessonPlan,
   LessonPlanInput,
+  LibraryBook,
+  LibraryBookInput,
+  LibraryLoan,
+  LibraryLoanInput,
+  LibraryLoanReturnInput,
   ListAttendanceParams,
   ListExamsParams,
   ListFeePaymentsParams,
   ListFeeStructuresParams,
   ListGalleryAlbumsParams,
   ListLessonPlansParams,
+  ListLibraryLoansParams,
   ListMarksParams,
   ListNoticesParams,
   ListPollsParams,
@@ -64,6 +70,7 @@ import type {
   ListStaffAttendanceParams,
   ListStudentsParams,
   ListSubjectsParams,
+  ListTransportAssignmentsParams,
   ListUsersParams,
   Mark,
   MarksBulkInput,
@@ -90,6 +97,12 @@ import type {
   TeacherInput,
   TeacherUpdate,
   TimelineItem,
+  TransportAssignment,
+  TransportAssignmentInput,
+  TransportRoute,
+  TransportRouteInput,
+  TransportStop,
+  TransportStopInput,
   UpdateAppointmentStatusInput,
   User,
   UserCreated,
@@ -5549,6 +5562,1112 @@ export const useMarkFeePaid = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getMarkFeePaidMutationOptions(options));
+    }
+
+export const getListLibraryBooksUrl = () => {
+
+
+
+
+  return `/api/library/books`
+}
+
+/**
+ * @summary List the school's book catalog
+ */
+export const listLibraryBooks = async ( options?: RequestInit): Promise<LibraryBook[]> => {
+
+  return customFetch<LibraryBook[]>(getListLibraryBooksUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLibraryBooksQueryKey = () => {
+    return [
+    `/api/library/books`
+    ] as const;
+    }
+
+
+export const getListLibraryBooksQueryOptions = <TData = Awaited<ReturnType<typeof listLibraryBooks>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryBooks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLibraryBooksQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLibraryBooks>>> = ({ signal }) => listLibraryBooks({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLibraryBooks>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLibraryBooksQueryResult = NonNullable<Awaited<ReturnType<typeof listLibraryBooks>>>
+export type ListLibraryBooksQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the school's book catalog
+ */
+
+export function useListLibraryBooks<TData = Awaited<ReturnType<typeof listLibraryBooks>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryBooks>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLibraryBooksQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLibraryBookUrl = () => {
+
+
+
+
+  return `/api/library/books`
+}
+
+/**
+ * @summary Add a book to the catalog (admin/teacher)
+ */
+export const createLibraryBook = async (libraryBookInput: LibraryBookInput, options?: RequestInit): Promise<LibraryBook> => {
+
+  return customFetch<LibraryBook>(getCreateLibraryBookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(libraryBookInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLibraryBookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLibraryBook>>, TError,{data: BodyType<LibraryBookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLibraryBook>>, TError,{data: BodyType<LibraryBookInput>}, TContext> => {
+
+const mutationKey = ['createLibraryBook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLibraryBook>>, {data: BodyType<LibraryBookInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLibraryBook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLibraryBookMutationResult = NonNullable<Awaited<ReturnType<typeof createLibraryBook>>>
+    export type CreateLibraryBookMutationBody = BodyType<LibraryBookInput>
+    export type CreateLibraryBookMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a book to the catalog (admin/teacher)
+ */
+export const useCreateLibraryBook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLibraryBook>>, TError,{data: BodyType<LibraryBookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLibraryBook>>,
+        TError,
+        {data: BodyType<LibraryBookInput>},
+        TContext
+      > => {
+      return useMutation(getCreateLibraryBookMutationOptions(options));
+    }
+
+export const getUpdateLibraryBookUrl = (id: number,) => {
+
+
+
+
+  return `/api/library/books/${id}`
+}
+
+/**
+ * @summary Edit a catalog entry (admin/teacher)
+ */
+export const updateLibraryBook = async (id: number,
+    libraryBookInput: LibraryBookInput, options?: RequestInit): Promise<LibraryBook> => {
+
+  return customFetch<LibraryBook>(getUpdateLibraryBookUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(libraryBookInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateLibraryBookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLibraryBook>>, TError,{id: number;data: BodyType<LibraryBookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateLibraryBook>>, TError,{id: number;data: BodyType<LibraryBookInput>}, TContext> => {
+
+const mutationKey = ['updateLibraryBook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateLibraryBook>>, {id: number;data: BodyType<LibraryBookInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateLibraryBook(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateLibraryBookMutationResult = NonNullable<Awaited<ReturnType<typeof updateLibraryBook>>>
+    export type UpdateLibraryBookMutationBody = BodyType<LibraryBookInput>
+    export type UpdateLibraryBookMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit a catalog entry (admin/teacher)
+ */
+export const useUpdateLibraryBook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateLibraryBook>>, TError,{id: number;data: BodyType<LibraryBookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateLibraryBook>>,
+        TError,
+        {id: number;data: BodyType<LibraryBookInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateLibraryBookMutationOptions(options));
+    }
+
+export const getDeleteLibraryBookUrl = (id: number,) => {
+
+
+
+
+  return `/api/library/books/${id}`
+}
+
+/**
+ * @summary Remove a book from the catalog (admin/teacher)
+ */
+export const deleteLibraryBook = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteLibraryBookUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteLibraryBookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLibraryBook>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteLibraryBook>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteLibraryBook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteLibraryBook>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteLibraryBook(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteLibraryBookMutationResult = NonNullable<Awaited<ReturnType<typeof deleteLibraryBook>>>
+
+    export type DeleteLibraryBookMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a book from the catalog (admin/teacher)
+ */
+export const useDeleteLibraryBook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteLibraryBook>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteLibraryBook>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteLibraryBookMutationOptions(options));
+    }
+
+export const getListLibraryLoansUrl = (params?: ListLibraryLoansParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/library/loans?${stringifiedParams}` : `/api/library/loans`
+}
+
+/**
+ * @summary List loans (own children only for student/parent)
+ */
+export const listLibraryLoans = async (params?: ListLibraryLoansParams, options?: RequestInit): Promise<LibraryLoan[]> => {
+
+  return customFetch<LibraryLoan[]>(getListLibraryLoansUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListLibraryLoansQueryKey = (params?: ListLibraryLoansParams,) => {
+    return [
+    `/api/library/loans`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListLibraryLoansQueryOptions = <TData = Awaited<ReturnType<typeof listLibraryLoans>>, TError = ErrorType<unknown>>(params?: ListLibraryLoansParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryLoans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLibraryLoansQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLibraryLoans>>> = ({ signal }) => listLibraryLoans(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLibraryLoans>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListLibraryLoansQueryResult = NonNullable<Awaited<ReturnType<typeof listLibraryLoans>>>
+export type ListLibraryLoansQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List loans (own children only for student/parent)
+ */
+
+export function useListLibraryLoans<TData = Awaited<ReturnType<typeof listLibraryLoans>>, TError = ErrorType<unknown>>(
+ params?: ListLibraryLoansParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listLibraryLoans>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListLibraryLoansQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateLibraryLoanUrl = () => {
+
+
+
+
+  return `/api/library/loans`
+}
+
+/**
+ * @summary Issue a book to a student (admin/teacher)
+ */
+export const createLibraryLoan = async (libraryLoanInput: LibraryLoanInput, options?: RequestInit): Promise<LibraryLoan> => {
+
+  return customFetch<LibraryLoan>(getCreateLibraryLoanUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(libraryLoanInput)
+  }
+);}
+
+
+
+
+
+export const getCreateLibraryLoanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLibraryLoan>>, TError,{data: BodyType<LibraryLoanInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createLibraryLoan>>, TError,{data: BodyType<LibraryLoanInput>}, TContext> => {
+
+const mutationKey = ['createLibraryLoan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createLibraryLoan>>, {data: BodyType<LibraryLoanInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createLibraryLoan(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateLibraryLoanMutationResult = NonNullable<Awaited<ReturnType<typeof createLibraryLoan>>>
+    export type CreateLibraryLoanMutationBody = BodyType<LibraryLoanInput>
+    export type CreateLibraryLoanMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Issue a book to a student (admin/teacher)
+ */
+export const useCreateLibraryLoan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createLibraryLoan>>, TError,{data: BodyType<LibraryLoanInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createLibraryLoan>>,
+        TError,
+        {data: BodyType<LibraryLoanInput>},
+        TContext
+      > => {
+      return useMutation(getCreateLibraryLoanMutationOptions(options));
+    }
+
+export const getReturnLibraryLoanUrl = (id: number,) => {
+
+
+
+
+  return `/api/library/loans/${id}/return`
+}
+
+/**
+ * @summary Mark a loan returned (admin/teacher)
+ */
+export const returnLibraryLoan = async (id: number,
+    libraryLoanReturnInput?: LibraryLoanReturnInput, options?: RequestInit): Promise<LibraryLoan> => {
+
+  return customFetch<LibraryLoan>(getReturnLibraryLoanUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(libraryLoanReturnInput)
+  }
+);}
+
+
+
+
+
+export const getReturnLibraryLoanMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof returnLibraryLoan>>, TError,{id: number;data?: BodyType<LibraryLoanReturnInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof returnLibraryLoan>>, TError,{id: number;data?: BodyType<LibraryLoanReturnInput>}, TContext> => {
+
+const mutationKey = ['returnLibraryLoan'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof returnLibraryLoan>>, {id: number;data?: BodyType<LibraryLoanReturnInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  returnLibraryLoan(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReturnLibraryLoanMutationResult = NonNullable<Awaited<ReturnType<typeof returnLibraryLoan>>>
+    export type ReturnLibraryLoanMutationBody = BodyType<LibraryLoanReturnInput> | undefined
+    export type ReturnLibraryLoanMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a loan returned (admin/teacher)
+ */
+export const useReturnLibraryLoan = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof returnLibraryLoan>>, TError,{id: number;data?: BodyType<LibraryLoanReturnInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof returnLibraryLoan>>,
+        TError,
+        {id: number;data?: BodyType<LibraryLoanReturnInput>},
+        TContext
+      > => {
+      return useMutation(getReturnLibraryLoanMutationOptions(options));
+    }
+
+export const getListTransportRoutesUrl = () => {
+
+
+
+
+  return `/api/transport/routes`
+}
+
+/**
+ * @summary List transport routes with their stops
+ */
+export const listTransportRoutes = async ( options?: RequestInit): Promise<TransportRoute[]> => {
+
+  return customFetch<TransportRoute[]>(getListTransportRoutesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTransportRoutesQueryKey = () => {
+    return [
+    `/api/transport/routes`
+    ] as const;
+    }
+
+
+export const getListTransportRoutesQueryOptions = <TData = Awaited<ReturnType<typeof listTransportRoutes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransportRoutes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTransportRoutesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTransportRoutes>>> = ({ signal }) => listTransportRoutes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTransportRoutes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTransportRoutesQueryResult = NonNullable<Awaited<ReturnType<typeof listTransportRoutes>>>
+export type ListTransportRoutesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List transport routes with their stops
+ */
+
+export function useListTransportRoutes<TData = Awaited<ReturnType<typeof listTransportRoutes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransportRoutes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTransportRoutesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateTransportRouteUrl = () => {
+
+
+
+
+  return `/api/transport/routes`
+}
+
+/**
+ * @summary Add a route (admin only)
+ */
+export const createTransportRoute = async (transportRouteInput: TransportRouteInput, options?: RequestInit): Promise<TransportRoute> => {
+
+  return customFetch<TransportRoute>(getCreateTransportRouteUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(transportRouteInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTransportRouteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportRoute>>, TError,{data: BodyType<TransportRouteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTransportRoute>>, TError,{data: BodyType<TransportRouteInput>}, TContext> => {
+
+const mutationKey = ['createTransportRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTransportRoute>>, {data: BodyType<TransportRouteInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTransportRoute(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTransportRouteMutationResult = NonNullable<Awaited<ReturnType<typeof createTransportRoute>>>
+    export type CreateTransportRouteMutationBody = BodyType<TransportRouteInput>
+    export type CreateTransportRouteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a route (admin only)
+ */
+export const useCreateTransportRoute = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportRoute>>, TError,{data: BodyType<TransportRouteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTransportRoute>>,
+        TError,
+        {data: BodyType<TransportRouteInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTransportRouteMutationOptions(options));
+    }
+
+export const getDeleteTransportRouteUrl = (id: number,) => {
+
+
+
+
+  return `/api/transport/routes/${id}`
+}
+
+/**
+ * @summary Remove a route (admin only)
+ */
+export const deleteTransportRoute = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTransportRouteUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteTransportRouteMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportRoute>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTransportRoute>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteTransportRoute'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTransportRoute>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteTransportRoute(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTransportRouteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTransportRoute>>>
+
+    export type DeleteTransportRouteMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a route (admin only)
+ */
+export const useDeleteTransportRoute = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportRoute>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTransportRoute>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTransportRouteMutationOptions(options));
+    }
+
+export const getCreateTransportStopUrl = (id: number,) => {
+
+
+
+
+  return `/api/transport/routes/${id}/stops`
+}
+
+/**
+ * @summary Add a stop to a route (admin only)
+ */
+export const createTransportStop = async (id: number,
+    transportStopInput: TransportStopInput, options?: RequestInit): Promise<TransportStop> => {
+
+  return customFetch<TransportStop>(getCreateTransportStopUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(transportStopInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTransportStopMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportStop>>, TError,{id: number;data: BodyType<TransportStopInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTransportStop>>, TError,{id: number;data: BodyType<TransportStopInput>}, TContext> => {
+
+const mutationKey = ['createTransportStop'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTransportStop>>, {id: number;data: BodyType<TransportStopInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  createTransportStop(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTransportStopMutationResult = NonNullable<Awaited<ReturnType<typeof createTransportStop>>>
+    export type CreateTransportStopMutationBody = BodyType<TransportStopInput>
+    export type CreateTransportStopMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a stop to a route (admin only)
+ */
+export const useCreateTransportStop = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportStop>>, TError,{id: number;data: BodyType<TransportStopInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTransportStop>>,
+        TError,
+        {id: number;data: BodyType<TransportStopInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTransportStopMutationOptions(options));
+    }
+
+export const getDeleteTransportStopUrl = (id: number,) => {
+
+
+
+
+  return `/api/transport/stops/${id}`
+}
+
+/**
+ * @summary Remove a stop (admin only)
+ */
+export const deleteTransportStop = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTransportStopUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteTransportStopMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportStop>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTransportStop>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteTransportStop'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTransportStop>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteTransportStop(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTransportStopMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTransportStop>>>
+
+    export type DeleteTransportStopMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a stop (admin only)
+ */
+export const useDeleteTransportStop = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportStop>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTransportStop>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTransportStopMutationOptions(options));
+    }
+
+export const getListTransportAssignmentsUrl = (params?: ListTransportAssignmentsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/transport/assignments?${stringifiedParams}` : `/api/transport/assignments`
+}
+
+/**
+ * @summary List student transport assignments (own children only for student/parent)
+ */
+export const listTransportAssignments = async (params?: ListTransportAssignmentsParams, options?: RequestInit): Promise<TransportAssignment[]> => {
+
+  return customFetch<TransportAssignment[]>(getListTransportAssignmentsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTransportAssignmentsQueryKey = (params?: ListTransportAssignmentsParams,) => {
+    return [
+    `/api/transport/assignments`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTransportAssignmentsQueryOptions = <TData = Awaited<ReturnType<typeof listTransportAssignments>>, TError = ErrorType<unknown>>(params?: ListTransportAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransportAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTransportAssignmentsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTransportAssignments>>> = ({ signal }) => listTransportAssignments(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTransportAssignments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTransportAssignmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listTransportAssignments>>>
+export type ListTransportAssignmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List student transport assignments (own children only for student/parent)
+ */
+
+export function useListTransportAssignments<TData = Awaited<ReturnType<typeof listTransportAssignments>>, TError = ErrorType<unknown>>(
+ params?: ListTransportAssignmentsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTransportAssignments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTransportAssignmentsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateTransportAssignmentUrl = () => {
+
+
+
+
+  return `/api/transport/assignments`
+}
+
+/**
+ * @summary Assign a student to a route/stop (admin only)
+ */
+export const createTransportAssignment = async (transportAssignmentInput: TransportAssignmentInput, options?: RequestInit): Promise<TransportAssignment> => {
+
+  return customFetch<TransportAssignment>(getCreateTransportAssignmentUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(transportAssignmentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTransportAssignmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportAssignment>>, TError,{data: BodyType<TransportAssignmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTransportAssignment>>, TError,{data: BodyType<TransportAssignmentInput>}, TContext> => {
+
+const mutationKey = ['createTransportAssignment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTransportAssignment>>, {data: BodyType<TransportAssignmentInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTransportAssignment(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTransportAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof createTransportAssignment>>>
+    export type CreateTransportAssignmentMutationBody = BodyType<TransportAssignmentInput>
+    export type CreateTransportAssignmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Assign a student to a route/stop (admin only)
+ */
+export const useCreateTransportAssignment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransportAssignment>>, TError,{data: BodyType<TransportAssignmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTransportAssignment>>,
+        TError,
+        {data: BodyType<TransportAssignmentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTransportAssignmentMutationOptions(options));
+    }
+
+export const getDeleteTransportAssignmentUrl = (studentId: number,) => {
+
+
+
+
+  return `/api/transport/assignments/${studentId}`
+}
+
+/**
+ * @summary Remove a student's transport assignment (admin only)
+ */
+export const deleteTransportAssignment = async (studentId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTransportAssignmentUrl(studentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteTransportAssignmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportAssignment>>, TError,{studentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTransportAssignment>>, TError,{studentId: number}, TContext> => {
+
+const mutationKey = ['deleteTransportAssignment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTransportAssignment>>, {studentId: number}> = (props) => {
+          const {studentId} = props ?? {};
+
+          return  deleteTransportAssignment(studentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTransportAssignmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTransportAssignment>>>
+
+    export type DeleteTransportAssignmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a student's transport assignment (admin only)
+ */
+export const useDeleteTransportAssignment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransportAssignment>>, TError,{studentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTransportAssignment>>,
+        TError,
+        {studentId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTransportAssignmentMutationOptions(options));
     }
 
 export const getGetDashboardSummaryUrl = () => {

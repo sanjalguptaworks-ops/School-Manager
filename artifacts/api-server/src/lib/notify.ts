@@ -1,8 +1,9 @@
-import { db, usersTable, studentsTable, parentStudentsTable, notificationsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, usersTable, studentsTable, parentStudentsTable, notificationsTable, pushSubscriptionsTable } from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
 import { sendBulkNotificationEmail } from "./mailer";
 import { sendBulkSms } from "./sms";
 import { sendBulkWhatsapp } from "./whatsapp";
+import { sendWebPush } from "./webpush";
 import { isEmailEnabledForSchool, isSmsEnabledForSchool, isWhatsappEnabledForSchool } from "./school-settings";
 
 const APP_NAME = "EduCore";
@@ -146,6 +147,17 @@ async function dispatch(
   if (whatsappEnabled) {
     const phones = contacts.filter((c): c is Contact & { phone: string } => !!c.phone).map((c) => c.phone);
     if (phones.length > 0) await sendBulkWhatsapp(phones, smsBody);
+  }
+
+  // Push costs nothing and is opt-in per-browser (see push-subscriptions.ts),
+  // so unlike SMS/WhatsApp there's no school-level toggle -- just send to
+  // whichever contacts happen to have a subscription on file.
+  if (contacts.length > 0) {
+    const subs = await db
+      .select()
+      .from(pushSubscriptionsTable)
+      .where(inArray(pushSubscriptionsTable.userId, contacts.map((c) => c.userId)));
+    await Promise.allSettled(subs.map((sub) => sendWebPush(sub, inApp)));
   }
 
   if (contacts.length > 0) {

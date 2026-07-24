@@ -1867,6 +1867,347 @@ export const MarkFeePaidResponse = zod.object({
 
 
 /**
+ * @summary List the school's book catalog
+ */
+export const ListLibraryBooksResponseItem = zod.object({
+  "id": zod.number(),
+  "schoolId": zod.number(),
+  "title": zod.string(),
+  "author": zod.string(),
+  "isbn": zod.string().nullish(),
+  "totalCopies": zod.number(),
+  "availableCopies": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+export const ListLibraryBooksResponse = zod.array(ListLibraryBooksResponseItem)
+
+
+/**
+ * @summary Add a book to the catalog (admin/teacher)
+ */
+export const CreateLibraryBookBody = zod.object({
+  "title": zod.string().optional(),
+  "author": zod.string().optional(),
+  "isbn": zod.string().nullish(),
+  "totalCopies": zod.number().optional()
+})
+
+export const CreateLibraryBookResponse = zod.object({
+  "id": zod.number(),
+  "schoolId": zod.number(),
+  "title": zod.string(),
+  "author": zod.string(),
+  "isbn": zod.string().nullish(),
+  "totalCopies": zod.number(),
+  "availableCopies": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Edit a catalog entry (admin/teacher)
+ */
+export const UpdateLibraryBookParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateLibraryBookBody = zod.object({
+  "title": zod.string().optional(),
+  "author": zod.string().optional(),
+  "isbn": zod.string().nullish(),
+  "totalCopies": zod.number().optional()
+})
+
+export const UpdateLibraryBookResponse = zod.object({
+  "id": zod.number(),
+  "schoolId": zod.number(),
+  "title": zod.string(),
+  "author": zod.string(),
+  "isbn": zod.string().nullish(),
+  "totalCopies": zod.number(),
+  "availableCopies": zod.number(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Remove a book from the catalog (admin/teacher)
+ */
+export const DeleteLibraryBookParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteLibraryBookResponse = zod.unknown()
+
+
+/**
+ * @summary List loans (own children only for student/parent)
+ */
+export const ListLibraryLoansQueryParams = zod.object({
+  "studentId": zod.coerce.number().optional()
+})
+
+export const ListLibraryLoansResponseItem = zod.object({
+  "id": zod.number(),
+  "bookId": zod.number(),
+  "studentId": zod.number(),
+  "issuedAt": zod.coerce.date(),
+  "dueDate": zod.coerce.date(),
+  "returnedAt": zod.coerce.date().nullish(),
+  "fineAmount": zod.string().nullish(),
+  "book": zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "author": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional()
+}).optional()
+})
+export const ListLibraryLoansResponse = zod.array(ListLibraryLoansResponseItem)
+
+
+/**
+ * @summary Issue a book to a student (admin/teacher)
+ */
+export const CreateLibraryLoanBody = zod.object({
+  "bookId": zod.number(),
+  "studentId": zod.number(),
+  "dueDate": zod.coerce.date()
+})
+
+export const CreateLibraryLoanResponse = zod.object({
+  "id": zod.number(),
+  "bookId": zod.number(),
+  "studentId": zod.number(),
+  "issuedAt": zod.coerce.date(),
+  "dueDate": zod.coerce.date(),
+  "returnedAt": zod.coerce.date().nullish(),
+  "fineAmount": zod.string().nullish(),
+  "book": zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "author": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional()
+}).optional()
+})
+
+
+/**
+ * @summary Mark a loan returned (admin/teacher)
+ */
+export const ReturnLibraryLoanParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReturnLibraryLoanBody = zod.object({
+  "fineAmount": zod.number().optional()
+})
+
+export const ReturnLibraryLoanResponse = zod.object({
+  "id": zod.number(),
+  "bookId": zod.number(),
+  "studentId": zod.number(),
+  "issuedAt": zod.coerce.date(),
+  "dueDate": zod.coerce.date(),
+  "returnedAt": zod.coerce.date().nullish(),
+  "fineAmount": zod.string().nullish(),
+  "book": zod.object({
+  "id": zod.number().optional(),
+  "title": zod.string().optional(),
+  "author": zod.string().optional()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional()
+}).optional()
+})
+
+
+/**
+ * @summary List transport routes with their stops
+ */
+export const ListTransportRoutesResponseItem = zod.object({
+  "id": zod.number(),
+  "schoolId": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "stops": zod.array(zod.object({
+  "id": zod.number(),
+  "routeId": zod.number(),
+  "name": zod.string(),
+  "order": zod.number(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+})).optional()
+})
+export const ListTransportRoutesResponse = zod.array(ListTransportRoutesResponseItem)
+
+
+/**
+ * @summary Add a route (admin only)
+ */
+export const CreateTransportRouteBody = zod.object({
+  "name": zod.string(),
+  "description": zod.string().nullish()
+})
+
+export const CreateTransportRouteResponse = zod.object({
+  "id": zod.number(),
+  "schoolId": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "stops": zod.array(zod.object({
+  "id": zod.number(),
+  "routeId": zod.number(),
+  "name": zod.string(),
+  "order": zod.number(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+})).optional()
+})
+
+
+/**
+ * @summary Remove a route (admin only)
+ */
+export const DeleteTransportRouteParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTransportRouteResponse = zod.unknown()
+
+
+/**
+ * @summary Add a stop to a route (admin only)
+ */
+export const CreateTransportStopParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreateTransportStopBody = zod.object({
+  "name": zod.string(),
+  "order": zod.number().optional(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+})
+
+export const CreateTransportStopResponse = zod.object({
+  "id": zod.number(),
+  "routeId": zod.number(),
+  "name": zod.string(),
+  "order": zod.number(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+})
+
+
+/**
+ * @summary Remove a stop (admin only)
+ */
+export const DeleteTransportStopParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTransportStopResponse = zod.unknown()
+
+
+/**
+ * @summary List student transport assignments (own children only for student/parent)
+ */
+export const ListTransportAssignmentsQueryParams = zod.object({
+  "studentId": zod.coerce.number().optional()
+})
+
+export const ListTransportAssignmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "routeId": zod.number(),
+  "stopId": zod.number(),
+  "route": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "stop": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional()
+}).optional()
+})
+export const ListTransportAssignmentsResponse = zod.array(ListTransportAssignmentsResponseItem)
+
+
+/**
+ * @summary Assign a student to a route/stop (admin only)
+ */
+export const CreateTransportAssignmentBody = zod.object({
+  "studentId": zod.number(),
+  "routeId": zod.number(),
+  "stopId": zod.number()
+})
+
+export const CreateTransportAssignmentResponse = zod.object({
+  "id": zod.number(),
+  "studentId": zod.number(),
+  "routeId": zod.number(),
+  "stopId": zod.number(),
+  "route": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional(),
+  "stop": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional(),
+  "pickupTime": zod.string().nullish(),
+  "dropTime": zod.string().nullish()
+}).optional(),
+  "student": zod.object({
+  "id": zod.number().optional(),
+  "rollNo": zod.string().optional(),
+  "user": zod.object({
+  "id": zod.number().optional(),
+  "name": zod.string().optional()
+}).optional()
+}).optional()
+})
+
+
+/**
+ * @summary Remove a student's transport assignment (admin only)
+ */
+export const DeleteTransportAssignmentParams = zod.object({
+  "studentId": zod.coerce.number()
+})
+
+export const DeleteTransportAssignmentResponse = zod.unknown()
+
+
+/**
  * @summary Get overall school stats
  */
 export const GetDashboardSummaryResponse = zod.object({

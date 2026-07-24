@@ -35,12 +35,15 @@ import {
   Newspaper,
   FolderKanban,
   ClipboardCheck,
-  Users2
+  Users2,
+  BookOpen as LibraryIcon,
+  Bus
 } from "lucide-react";
 import { NavItem } from "./nav-item";
 import { NotificationBell } from "./notification-bell";
 import { ChildSwitcher } from "./child-switcher";
 import { GlobalSearch } from "./global-search";
+import { NotificationPermissionBanner } from "./notification-permission-banner";
 import { Button } from "../ui/button";
 
 const navConfig = {
@@ -58,6 +61,8 @@ const navConfig = {
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/resources", icon: Newspaper, label: "Resources" },
+    { href: "/library", icon: LibraryIcon, label: "Library" },
+    { href: "/transport", icon: Bus, label: "Transport" },
     { href: "/lesson-planner", icon: FolderKanban, label: "Lesson Planner" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
@@ -83,6 +88,7 @@ const navConfig = {
     { href: "/exams", icon: FileText, label: "Exams" },
     { href: "/homework", icon: NotebookPen, label: "Homework" },
     { href: "/resources", icon: Newspaper, label: "Resources" },
+    { href: "/library", icon: LibraryIcon, label: "Library" },
     { href: "/lesson-planner", icon: FolderKanban, label: "Lesson Planner" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
@@ -104,6 +110,8 @@ const navConfig = {
     { href: "/resources", icon: Newspaper, label: "Resources" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
+    { href: "/library", icon: LibraryIcon, label: "Library" },
+    { href: "/transport", icon: Bus, label: "Transport" },
     { href: "/leave-requests", icon: CalendarOff, label: "Leave Requests" },
     { href: "/my-certificates", icon: Award, label: "Certificates" },
     { href: "/notices", icon: Bell, label: "Notices" },
@@ -120,6 +128,8 @@ const navConfig = {
     { href: "/resources", icon: Newspaper, label: "Resources" },
     { href: "/timetable", icon: CalendarClock, label: "Timetable" },
     { href: "/subjects", icon: BookOpenCheck, label: "Subjects" },
+    { href: "/library", icon: LibraryIcon, label: "Library" },
+    { href: "/transport", icon: Bus, label: "Transport" },
     { href: "/discipline", icon: ShieldAlert, label: "Discipline" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
     { href: "/notices", icon: Bell, label: "Notices" },
@@ -247,6 +257,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
+        <div className="print:hidden">
+          <NotificationPermissionBanner />
+        </div>
         {/* Mobile Header */}
         <div className="md:hidden flex items-center justify-between p-4 border-b bg-card z-30 print:hidden">
           <div className="flex items-center gap-2 min-w-0">

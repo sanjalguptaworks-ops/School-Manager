@@ -1,0 +1,17 @@
+{
+  "name": "EduCore",
+  "short_name": "EduCore",
+  "description": "School management for students, parents, teachers, and admins.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF3C00",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

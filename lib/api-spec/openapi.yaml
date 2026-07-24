@@ -1469,6 +1469,278 @@ paths:
               schema:
                 $ref: "#/components/schemas/FeePayment"
 
+  # ── Library ───────────────────────────────────────────────────────────────
+  /library/books:
+    get:
+      operationId: listLibraryBooks
+      tags: [library]
+      summary: List the school's book catalog
+      responses:
+        "200":
+          description: Books
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryBook"
+    post:
+      operationId: createLibraryBook
+      tags: [library]
+      summary: Add a book to the catalog (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LibraryBookInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryBook"
+
+  /library/books/{id}:
+    patch:
+      operationId: updateLibraryBook
+      tags: [library]
+      summary: Edit a catalog entry (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LibraryBookInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryBook"
+    delete:
+      operationId: deleteLibraryBook
+      tags: [library]
+      summary: Remove a book from the catalog (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /library/loans:
+    get:
+      operationId: listLibraryLoans
+      tags: [library]
+      summary: List loans (own children only for student/parent)
+      parameters:
+        - name: studentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Loans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LibraryLoan"
+    post:
+      operationId: createLibraryLoan
+      tags: [library]
+      summary: Issue a book to a student (admin/teacher)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LibraryLoanInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryLoan"
+
+  /library/loans/{id}/return:
+    post:
+      operationId: returnLibraryLoan
+      tags: [library]
+      summary: Mark a loan returned (admin/teacher)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LibraryLoanReturnInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LibraryLoan"
+
+  # ── Transport ─────────────────────────────────────────────────────────────
+  /transport/routes:
+    get:
+      operationId: listTransportRoutes
+      tags: [transport]
+      summary: List transport routes with their stops
+      responses:
+        "200":
+          description: Routes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransportRoute"
+    post:
+      operationId: createTransportRoute
+      tags: [transport]
+      summary: Add a route (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransportRouteInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportRoute"
+
+  /transport/routes/{id}:
+    delete:
+      operationId: deleteTransportRoute
+      tags: [transport]
+      summary: Remove a route (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /transport/routes/{id}/stops:
+    post:
+      operationId: createTransportStop
+      tags: [transport]
+      summary: Add a stop to a route (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransportStopInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportStop"
+
+  /transport/stops/{id}:
+    delete:
+      operationId: deleteTransportStop
+      tags: [transport]
+      summary: Remove a stop (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /transport/assignments:
+    get:
+      operationId: listTransportAssignments
+      tags: [transport]
+      summary: List student transport assignments (own children only for student/parent)
+      parameters:
+        - name: studentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransportAssignment"
+    post:
+      operationId: createTransportAssignment
+      tags: [transport]
+      summary: Assign a student to a route/stop (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransportAssignmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportAssignment"
+
+  /transport/assignments/{studentId}:
+    delete:
+      operationId: deleteTransportAssignment
+      tags: [transport]
+      summary: Remove a student's transport assignment (admin only)
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
   # ── Dashboard ─────────────────────────────────────────────────────────────
   /dashboard/summary:
     get:
@@ -2518,6 +2790,217 @@ components:
           $ref: "#/components/schemas/Student"
         feeStructure:
           $ref: "#/components/schemas/FeeStructure"
+
+    # ── Library ───────────────────────────────────────────────────────────
+    LibraryBook:
+      type: object
+      required: [id, schoolId, title, author, totalCopies, availableCopies, createdAt]
+      properties:
+        id:
+          type: integer
+        schoolId:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        isbn:
+          type: ["string", "null"]
+        totalCopies:
+          type: integer
+        availableCopies:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    LibraryBookInput:
+      type: object
+      properties:
+        title:
+          type: string
+        author:
+          type: string
+        isbn:
+          type: ["string", "null"]
+        totalCopies:
+          type: integer
+
+    LibraryLoan:
+      type: object
+      required: [id, bookId, studentId, issuedAt, dueDate]
+      properties:
+        id:
+          type: integer
+        bookId:
+          type: integer
+        studentId:
+          type: integer
+        issuedAt:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        returnedAt:
+          type: ["string", "null"]
+          format: date
+        fineAmount:
+          type: ["string", "null"]
+        book:
+          type: object
+          properties:
+            id:
+              type: integer
+            title:
+              type: string
+            author:
+              type: string
+        student:
+          type: object
+          properties:
+            id:
+              type: integer
+            rollNo:
+              type: string
+            user:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+
+    LibraryLoanInput:
+      type: object
+      required: [bookId, studentId, dueDate]
+      properties:
+        bookId:
+          type: integer
+        studentId:
+          type: integer
+        dueDate:
+          type: string
+          format: date
+
+    LibraryLoanReturnInput:
+      type: object
+      properties:
+        fineAmount:
+          type: number
+
+    # ── Transport ─────────────────────────────────────────────────────────
+    TransportStop:
+      type: object
+      required: [id, routeId, name, order]
+      properties:
+        id:
+          type: integer
+        routeId:
+          type: integer
+        name:
+          type: string
+        order:
+          type: integer
+        pickupTime:
+          type: ["string", "null"]
+        dropTime:
+          type: ["string", "null"]
+
+    TransportStopInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        order:
+          type: integer
+        pickupTime:
+          type: ["string", "null"]
+        dropTime:
+          type: ["string", "null"]
+
+    TransportRoute:
+      type: object
+      required: [id, schoolId, name]
+      properties:
+        id:
+          type: integer
+        schoolId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        stops:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransportStop"
+
+    TransportRouteInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    TransportAssignment:
+      type: object
+      required: [id, studentId, routeId, stopId]
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        routeId:
+          type: integer
+        stopId:
+          type: integer
+        route:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+        stop:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            pickupTime:
+              type: ["string", "null"]
+            dropTime:
+              type: ["string", "null"]
+        student:
+          type: object
+          properties:
+            id:
+              type: integer
+            rollNo:
+              type: string
+            user:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+
+    TransportAssignmentInput:
+      type: object
+      required: [studentId, routeId, stopId]
+      properties:
+        studentId:
+          type: integer
+        routeId:
+          type: integer
+        stopId:
+          type: integer
 
     # ── Dashboard ─────────────────────────────────────────────────────────
     DashboardSummary:

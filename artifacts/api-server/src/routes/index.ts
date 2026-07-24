@@ -37,6 +37,9 @@ import lessonPlansRouter from "./lesson-plans";
 import staffAttendanceRouter from "./staff-attendance";
 import searchRouter from "./search";
 import dailyTasksRouter from "./daily-tasks";
+import pushSubscriptionsRouter from "./push-subscriptions";
+import libraryRouter from "./library";
+import transportRouter from "./transport";
 
 const router: IRouter = Router();
 
@@ -78,5 +81,8 @@ router.use(lessonPlansRouter);
 router.use(staffAttendanceRouter);
 router.use(searchRouter);
 router.use(dailyTasksRouter);
+router.use(pushSubscriptionsRouter);
+router.use(libraryRouter);
+router.use(transportRouter);
 
 export default router;
